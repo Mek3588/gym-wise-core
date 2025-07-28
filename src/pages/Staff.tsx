@@ -9,120 +9,96 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Search, Plus, Edit2, Eye, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Plus, Edit2, Eye, Trash2, Users, Clock, DollarSign, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-interface Member {
+interface Staff {
   id: string;
   first_name: string;
   last_name: string;
   email: string;
   phone?: string;
-  role: "member" | "trainer" | "admin";
+  role: "trainer" | "admin";
   address?: string;
   date_of_birth?: string;
   gender?: string;
-  emergency_contact_name?: string;
-  emergency_contact_phone?: string;
   created_at: string;
-  memberships?: any[];
+  // Additional staff-specific fields
+  specialty?: string;
+  hourly_rate?: number;
+  working_hours?: string;
+  bio?: string;
 }
 
-interface MembershipPlan {
-  id: string;
-  name: string;
-  price: number;
-  duration_months: number;
-  features: string[];
+interface StaffFormData {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  role: "trainer" | "admin";
+  address: string;
+  date_of_birth: string;
+  gender: string;
+  specialty: string;
+  hourly_rate: string;
+  working_hours: string;
+  bio: string;
 }
 
 const ITEMS_PER_PAGE = 10;
 
-export default function Members() {
-  const [members, setMembers] = useState<Member[]>([]);
-  const [membershipPlans, setMembershipPlans] = useState<MembershipPlan[]>([]);
+export default function Staff() {
+  const [staff, setStaff] = useState<Staff[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
-  const [formData, setFormData] = useState({
+  const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
+  const [formData, setFormData] = useState<StaffFormData>({
     first_name: "",
     last_name: "",
     email: "",
     phone: "",
-    role: "member" as "member" | "trainer" | "admin",
+    role: "trainer",
     address: "",
     date_of_birth: "",
     gender: "",
-    emergency_contact_name: "",
-    emergency_contact_phone: "",
-    membership_plan_id: "",
-    membership_start_date: new Date().toISOString().split('T')[0],
+    specialty: "",
+    hourly_rate: "",
+    working_hours: "",
+    bio: "",
   });
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchMembers();
-    fetchMembershipPlans();
+    fetchStaff();
   }, []);
 
-  const fetchMembers = async () => {
+  const fetchStaff = async () => {
     try {
       const { data, error } = await supabase
         .from("profiles")
-        .select(`
-          *,
-          memberships (
-            id,
-            start_date,
-            end_date,
-            status,
-            membership_plans (
-              name,
-              price,
-              duration_months
-            )
-          )
-        `)
-        .order("created_at", { ascending: false });
+        .select("*")
+        .in("role", ["trainer", "admin"])
+        .order("created_at", { ascending: false }) as { data: Staff[] | null, error: any };
 
       if (error) {
         toast({
           title: "Error",
-          description: "Failed to fetch members",
+          description: "Failed to fetch staff",
           variant: "destructive",
         });
       } else {
-        setMembers(data || []);
+        setStaff(data || []);
       }
     } catch (error) {
-      console.error("Error fetching members:", error);
+      console.error("Error fetching staff:", error);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const fetchMembershipPlans = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("membership_plans")
-        .select("*")
-        .eq("is_active", true)
-        .order("price");
-
-      if (error) {
-        console.error("Error fetching membership plans:", error);
-      } else {
-        setMembershipPlans(data || []);
-      }
-    } catch (error) {
-      console.error("Error fetching membership plans:", error);
     }
   };
 
@@ -132,20 +108,20 @@ export default function Members() {
       last_name: "",
       email: "",
       phone: "",
-      role: "member" as "member" | "trainer" | "admin",
+      role: "trainer",
       address: "",
       date_of_birth: "",
       gender: "",
-      emergency_contact_name: "",
-      emergency_contact_phone: "",
-      membership_plan_id: "",
-      membership_start_date: new Date().toISOString().split('T')[0],
+      specialty: "",
+      hourly_rate: "",
+      working_hours: "",
+      bio: "",
     });
   };
 
   const handleAdd = async () => {
     try {
-      // First, register the user in Supabase Auth
+      // Create user in Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: Math.random().toString(36).slice(-8), // Generate temporary password
@@ -167,7 +143,7 @@ export default function Members() {
         return;
       }
 
-      // Then update the profile with additional details
+      // Update profile with additional details
       if (authData.user) {
         const { error: profileError } = await supabase
           .from("profiles")
@@ -176,56 +152,34 @@ export default function Members() {
             address: formData.address,
             date_of_birth: formData.date_of_birth || null,
             gender: formData.gender || null,
-            emergency_contact_name: formData.emergency_contact_name || null,
-            emergency_contact_phone: formData.emergency_contact_phone || null,
           })
           .eq("id", authData.user.id);
 
         if (profileError) {
           console.error("Profile update error:", profileError);
         }
-
-        // Create membership if plan selected
-        if (formData.membership_plan_id) {
-          const plan = membershipPlans.find(p => p.id === formData.membership_plan_id);
-          if (plan) {
-            const startDate = new Date(formData.membership_start_date);
-            const endDate = new Date(startDate);
-            endDate.setMonth(endDate.getMonth() + plan.duration_months);
-
-            await supabase
-              .from("memberships")
-              .insert({
-                user_id: authData.user.id,
-                plan_id: formData.membership_plan_id,
-                start_date: formData.membership_start_date,
-                end_date: endDate.toISOString().split('T')[0],
-                status: "active",
-              });
-          }
-        }
       }
 
       toast({
         title: "Success",
-        description: "Member added successfully",
+        description: "Staff member added successfully",
       });
 
-      fetchMembers();
+      fetchStaff();
       setIsAddDialogOpen(false);
       resetForm();
     } catch (error) {
-      console.error("Error adding member:", error);
+      console.error("Error adding staff:", error);
       toast({
         title: "Error",
-        description: "Failed to add member",
+        description: "Failed to add staff member",
         variant: "destructive",
       });
     }
   };
 
   const handleEdit = async () => {
-    if (!selectedMember) return;
+    if (!selectedStaff) return;
 
     try {
       const { error } = await supabase
@@ -239,10 +193,8 @@ export default function Members() {
           address: formData.address,
           date_of_birth: formData.date_of_birth || null,
           gender: formData.gender || null,
-          emergency_contact_name: formData.emergency_contact_name || null,
-          emergency_contact_phone: formData.emergency_contact_phone || null,
         })
-        .eq("id", selectedMember.id);
+        .eq("id", selectedStaff.id);
 
       if (error) {
         toast({
@@ -253,26 +205,26 @@ export default function Members() {
       } else {
         toast({
           title: "Success",
-          description: "Member updated successfully",
+          description: "Staff member updated successfully",
         });
-        fetchMembers();
+        fetchStaff();
         setIsEditDialogOpen(false);
-        setSelectedMember(null);
+        setSelectedStaff(null);
         resetForm();
       }
     } catch (error) {
-      console.error("Error updating member:", error);
+      console.error("Error updating staff:", error);
       toast({
         title: "Error",
-        description: "Failed to update member",
+        description: "Failed to update staff member",
         variant: "destructive",
       });
     }
   };
 
-  const handleDelete = async (memberId: string) => {
+  const handleDelete = async (staffId: string) => {
     try {
-      const { error } = await supabase.auth.admin.deleteUser(memberId);
+      const { error } = await supabase.auth.admin.deleteUser(staffId);
 
       if (error) {
         toast({
@@ -283,45 +235,45 @@ export default function Members() {
       } else {
         toast({
           title: "Success",
-          description: "Member deleted successfully",
+          description: "Staff member deleted successfully",
         });
-        fetchMembers();
+        fetchStaff();
       }
     } catch (error) {
-      console.error("Error deleting member:", error);
+      console.error("Error deleting staff:", error);
       toast({
         title: "Error",
-        description: "Failed to delete member",
+        description: "Failed to delete staff member",
         variant: "destructive",
       });
     }
   };
 
-  const openEditDialog = (member: Member) => {
-    setSelectedMember(member);
+  const openEditDialog = (staffMember: Staff) => {
+    setSelectedStaff(staffMember);
     setFormData({
-      first_name: member.first_name,
-      last_name: member.last_name,
-      email: member.email,
-      phone: member.phone || "",
-      role: member.role,
-      address: member.address || "",
-      date_of_birth: member.date_of_birth || "",
-      gender: member.gender || "",
-      emergency_contact_name: member.emergency_contact_name || "",
-      emergency_contact_phone: member.emergency_contact_phone || "",
-      membership_plan_id: "",
-      membership_start_date: new Date().toISOString().split('T')[0],
+      first_name: staffMember.first_name,
+      last_name: staffMember.last_name,
+      email: staffMember.email,
+      phone: staffMember.phone || "",
+      role: staffMember.role,
+      address: staffMember.address || "",
+      date_of_birth: staffMember.date_of_birth || "",
+      gender: staffMember.gender || "",
+      specialty: staffMember.specialty || "",
+      hourly_rate: staffMember.hourly_rate?.toString() || "",
+      working_hours: staffMember.working_hours || "",
+      bio: staffMember.bio || "",
     });
     setIsEditDialogOpen(true);
   };
 
-  const openViewDialog = (member: Member) => {
-    setSelectedMember(member);
+  const openViewDialog = (staffMember: Staff) => {
+    setSelectedStaff(staffMember);
     setIsViewDialogOpen(true);
   };
 
-  const filteredMembers = members.filter((member) => {
+  const filteredStaff = staff.filter((member) => {
     const matchesSearch = 
       member.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       member.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -329,18 +281,12 @@ export default function Members() {
     
     const matchesRole = roleFilter === "all" || member.role === roleFilter;
 
-    // Check membership status
-    const activeMembership = member.memberships?.find(m => m.status === "active");
-    const matchesStatus = statusFilter === "all" || 
-      (statusFilter === "active" && activeMembership) ||
-      (statusFilter === "inactive" && !activeMembership);
-
-    return matchesSearch && matchesRole && matchesStatus;
+    return matchesSearch && matchesRole;
   });
 
-  const totalPages = Math.ceil(filteredMembers.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(filteredStaff.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedMembers = filteredMembers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const paginatedStaff = filteredStaff.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
@@ -353,14 +299,10 @@ export default function Members() {
     }
   };
 
-  const getMembershipStatus = (member: Member) => {
-    const activeMembership = member.memberships?.find(m => m.status === "active");
-    return activeMembership ? "Active" : "Inactive";
-  };
-
-  const getCurrentMembership = (member: Member) => {
-    const activeMembership = member.memberships?.find(m => m.status === "active");
-    return activeMembership?.membership_plans?.name || "No active membership";
+  const staffStats = {
+    totalTrainers: staff.filter(s => s.role === "trainer").length,
+    totalAdmins: staff.filter(s => s.role === "admin").length,
+    totalStaff: staff.length,
   };
 
   if (isLoading) {
@@ -375,21 +317,21 @@ export default function Members() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Members</h1>
-          <p className="text-muted-foreground">Manage gym members and their profiles</p>
+          <h1 className="text-3xl font-bold">Staff Management</h1>
+          <p className="text-muted-foreground">Manage trainers, admins, and staff members</p>
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={resetForm}>
               <Plus className="mr-2 h-4 w-4" />
-              Add Member
+              Add Staff Member
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Add New Member</DialogTitle>
+              <DialogTitle>Add New Staff Member</DialogTitle>
               <DialogDescription>
-                Create a new member profile with membership details.
+                Create a new staff profile for trainer or admin.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -434,6 +376,20 @@ export default function Members() {
                   />
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="role">Role</Label>
+                  <Select value={formData.role} onValueChange={(value: "trainer" | "admin") => setFormData({...formData, role: value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="trainer">Trainer</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
                   <Label htmlFor="dateOfBirth">Date of Birth</Label>
                   <Input 
                     id="dateOfBirth" 
@@ -442,8 +398,6 @@ export default function Members() {
                     onChange={(e) => setFormData({...formData, date_of_birth: e.target.value})}
                   />
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="gender">Gender</Label>
                   <Select value={formData.gender} onValueChange={(value) => setFormData({...formData, gender: value})}>
@@ -454,19 +408,6 @@ export default function Members() {
                       <SelectItem value="male">Male</SelectItem>
                       <SelectItem value="female">Female</SelectItem>
                       <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="role">Role</Label>
-                  <Select value={formData.role} onValueChange={(value: "member" | "trainer" | "admin") => setFormData({...formData, role: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="member">Member</SelectItem>
-                      <SelectItem value="trainer">Trainer</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -482,61 +423,96 @@ export default function Members() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="emergencyName">Emergency Contact Name</Label>
+                  <Label htmlFor="specialty">Specialty</Label>
                   <Input 
-                    id="emergencyName" 
-                    value={formData.emergency_contact_name}
-                    onChange={(e) => setFormData({...formData, emergency_contact_name: e.target.value})}
-                    placeholder="Emergency contact" 
+                    id="specialty" 
+                    value={formData.specialty}
+                    onChange={(e) => setFormData({...formData, specialty: e.target.value})}
+                    placeholder="e.g. Strength Training, Yoga" 
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="emergencyPhone">Emergency Contact Phone</Label>
+                  <Label htmlFor="hourlyRate">Hourly Rate ($)</Label>
                   <Input 
-                    id="emergencyPhone" 
-                    value={formData.emergency_contact_phone}
-                    onChange={(e) => setFormData({...formData, emergency_contact_phone: e.target.value})}
-                    placeholder="+1 (555) 123-4567" 
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="membershipPlan">Membership Plan</Label>
-                  <Select value={formData.membership_plan_id} onValueChange={(value) => setFormData({...formData, membership_plan_id: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select plan" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {membershipPlans.map((plan) => (
-                        <SelectItem key={plan.id} value={plan.id}>
-                          {plan.name} - ${plan.price}/{plan.duration_months}mo
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="startDate">Membership Start Date</Label>
-                  <Input 
-                    id="startDate" 
-                    type="date"
-                    value={formData.membership_start_date}
-                    onChange={(e) => setFormData({...formData, membership_start_date: e.target.value})}
+                    id="hourlyRate" 
+                    type="number"
+                    value={formData.hourly_rate}
+                    onChange={(e) => setFormData({...formData, hourly_rate: e.target.value})}
+                    placeholder="25" 
                   />
                 </div>
               </div>
-              <Button onClick={handleAdd} className="w-full">Create Member</Button>
+              <div className="space-y-2">
+                <Label htmlFor="workingHours">Working Hours</Label>
+                <Input 
+                  id="workingHours" 
+                  value={formData.working_hours}
+                  onChange={(e) => setFormData({...formData, working_hours: e.target.value})}
+                  placeholder="e.g. Mon-Fri 9AM-5PM" 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="bio">Bio</Label>
+                <Textarea 
+                  id="bio" 
+                  value={formData.bio}
+                  onChange={(e) => setFormData({...formData, bio: e.target.value})}
+                  placeholder="Brief bio and qualifications" 
+                />
+              </div>
+              <Button onClick={handleAdd} className="w-full">Create Staff Member</Button>
             </div>
           </DialogContent>
         </Dialog>
       </div>
 
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Staff</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{staffStats.totalStaff}</div>
+            <p className="text-xs text-muted-foreground">
+              All staff members
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Trainers</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{staffStats.totalTrainers}</div>
+            <p className="text-xs text-muted-foreground">
+              Active trainers
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Administrators</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{staffStats.totalAdmins}</div>
+            <p className="text-xs text-muted-foreground">
+              System administrators
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardHeader>
-          <CardTitle>All Members ({filteredMembers.length})</CardTitle>
+          <CardTitle>All Staff ({filteredStaff.length})</CardTitle>
           <CardDescription>
-            Manage member profiles, memberships, and personal details
+            Manage staff profiles, roles, and schedules
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -544,7 +520,7 @@ export default function Members() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search members..."
+                placeholder="Search staff..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -556,19 +532,8 @@ export default function Members() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Roles</SelectItem>
-                <SelectItem value="member">Members</SelectItem>
                 <SelectItem value="trainer">Trainers</SelectItem>
                 <SelectItem value="admin">Admins</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -581,15 +546,14 @@ export default function Members() {
                   <TableHead>Email</TableHead>
                   <TableHead>Phone</TableHead>
                   <TableHead>Role</TableHead>
-                  <TableHead>Membership</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Specialty</TableHead>
                   <TableHead>Joined</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedMembers.length > 0 ? (
-                  paginatedMembers.map((member) => (
+                {paginatedStaff.length > 0 ? (
+                  paginatedStaff.map((member) => (
                     <TableRow key={member.id}>
                       <TableCell className="font-medium">
                         {member.first_name} {member.last_name}
@@ -601,12 +565,7 @@ export default function Members() {
                           {member.role}
                         </Badge>
                       </TableCell>
-                      <TableCell>{getCurrentMembership(member)}</TableCell>
-                      <TableCell>
-                        <Badge variant={getMembershipStatus(member) === "Active" ? "default" : "secondary"}>
-                          {getMembershipStatus(member)}
-                        </Badge>
-                      </TableCell>
+                      <TableCell>{member.specialty || "—"}</TableCell>
                       <TableCell>
                         {new Date(member.created_at).toLocaleDateString()}
                       </TableCell>
@@ -626,7 +585,7 @@ export default function Members() {
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Member</AlertDialogTitle>
+                                <AlertDialogTitle>Delete Staff Member</AlertDialogTitle>
                                 <AlertDialogDescription>
                                   Are you sure you want to delete {member.first_name} {member.last_name}? 
                                   This action cannot be undone.
@@ -646,8 +605,8 @@ export default function Members() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8">
-                      No members found matching your criteria
+                    <TableCell colSpan={7} className="text-center py-8">
+                      No staff members found matching your criteria
                     </TableCell>
                   </TableRow>
                 )}
@@ -659,7 +618,7 @@ export default function Members() {
           {totalPages > 1 && (
             <div className="flex items-center justify-between mt-4">
               <p className="text-sm text-muted-foreground">
-                Showing {startIndex + 1} to {Math.min(startIndex + ITEMS_PER_PAGE, filteredMembers.length)} of {filteredMembers.length} results
+                Showing {startIndex + 1} to {Math.min(startIndex + ITEMS_PER_PAGE, filteredStaff.length)} of {filteredStaff.length} results
               </p>
               <div className="flex items-center gap-2">
                 <Button
@@ -703,9 +662,9 @@ export default function Members() {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Member</DialogTitle>
+            <DialogTitle>Edit Staff Member</DialogTitle>
             <DialogDescription>
-              Update member profile information.
+              Update staff member information.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -746,70 +705,46 @@ export default function Members() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="editDateOfBirth">Date of Birth</Label>
-                <Input 
-                  id="editDateOfBirth" 
-                  type="date"
-                  value={formData.date_of_birth}
-                  onChange={(e) => setFormData({...formData, date_of_birth: e.target.value})}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="editGender">Gender</Label>
-                <Select value={formData.gender} onValueChange={(value) => setFormData({...formData, gender: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select gender" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="male">Male</SelectItem>
-                    <SelectItem value="female">Female</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
                 <Label htmlFor="editRole">Role</Label>
-                <Select value={formData.role} onValueChange={(value: "member" | "trainer" | "admin") => setFormData({...formData, role: value})}>
+                <Select value={formData.role} onValueChange={(value: "trainer" | "admin") => setFormData({...formData, role: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="member">Member</SelectItem>
                     <SelectItem value="trainer">Trainer</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="editAddress">Address</Label>
-              <Textarea 
-                id="editAddress" 
-                value={formData.address}
-                onChange={(e) => setFormData({...formData, address: e.target.value})}
-              />
-            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="editEmergencyName">Emergency Contact Name</Label>
+                <Label htmlFor="editSpecialty">Specialty</Label>
                 <Input 
-                  id="editEmergencyName" 
-                  value={formData.emergency_contact_name}
-                  onChange={(e) => setFormData({...formData, emergency_contact_name: e.target.value})}
+                  id="editSpecialty" 
+                  value={formData.specialty}
+                  onChange={(e) => setFormData({...formData, specialty: e.target.value})}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="editEmergencyPhone">Emergency Contact Phone</Label>
+                <Label htmlFor="editHourlyRate">Hourly Rate ($)</Label>
                 <Input 
-                  id="editEmergencyPhone" 
-                  value={formData.emergency_contact_phone}
-                  onChange={(e) => setFormData({...formData, emergency_contact_phone: e.target.value})}
+                  id="editHourlyRate" 
+                  type="number"
+                  value={formData.hourly_rate}
+                  onChange={(e) => setFormData({...formData, hourly_rate: e.target.value})}
                 />
               </div>
             </div>
-            <Button onClick={handleEdit} className="w-full">Update Member</Button>
+            <div className="space-y-2">
+              <Label htmlFor="editWorkingHours">Working Hours</Label>
+              <Input 
+                id="editWorkingHours" 
+                value={formData.working_hours}
+                onChange={(e) => setFormData({...formData, working_hours: e.target.value})}
+              />
+            </div>
+            <Button onClick={handleEdit} className="w-full">Update Staff Member</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -818,68 +753,56 @@ export default function Members() {
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Member Details</DialogTitle>
+            <DialogTitle>Staff Details</DialogTitle>
             <DialogDescription>
-              Complete profile information for {selectedMember?.first_name} {selectedMember?.last_name}
+              Complete profile information for {selectedStaff?.first_name} {selectedStaff?.last_name}
             </DialogDescription>
           </DialogHeader>
-          {selectedMember && (
+          {selectedStaff && (
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm font-medium text-muted-foreground">Name</Label>
-                  <p className="mt-1">{selectedMember.first_name} {selectedMember.last_name}</p>
+                  <p className="mt-1">{selectedStaff.first_name} {selectedStaff.last_name}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-muted-foreground">Email</Label>
-                  <p className="mt-1">{selectedMember.email}</p>
+                  <p className="mt-1">{selectedStaff.email}</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm font-medium text-muted-foreground">Phone</Label>
-                  <p className="mt-1">{selectedMember.phone || "—"}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Date of Birth</Label>
-                  <p className="mt-1">{selectedMember.date_of_birth ? new Date(selectedMember.date_of_birth).toLocaleDateString() : "—"}</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Gender</Label>
-                  <p className="mt-1 capitalize">{selectedMember.gender || "—"}</p>
+                  <p className="mt-1">{selectedStaff.phone || "—"}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-muted-foreground">Role</Label>
-                  <Badge variant={getRoleBadgeVariant(selectedMember.role)} className="mt-1">
-                    {selectedMember.role}
+                  <Badge variant={getRoleBadgeVariant(selectedStaff.role)} className="mt-1">
+                    {selectedStaff.role}
                   </Badge>
                 </div>
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Specialty</Label>
+                  <p className="mt-1">{selectedStaff.specialty || "—"}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Hourly Rate</Label>
+                  <p className="mt-1">{selectedStaff.hourly_rate ? `$${selectedStaff.hourly_rate}` : "—"}</p>
+                </div>
+              </div>
               <div>
-                <Label className="text-sm font-medium text-muted-foreground">Address</Label>
-                <p className="mt-1">{selectedMember.address || "—"}</p>
+                <Label className="text-sm font-medium text-muted-foreground">Working Hours</Label>
+                <p className="mt-1">{selectedStaff.working_hours || "—"}</p>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Emergency Contact</Label>
-                  <p className="mt-1">{selectedMember.emergency_contact_name || "—"}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Emergency Phone</Label>
-                  <p className="mt-1">{selectedMember.emergency_contact_phone || "—"}</p>
-                </div>
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Bio</Label>
+                <p className="mt-1">{selectedStaff.bio || "—"}</p>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Current Membership</Label>
-                  <p className="mt-1">{getCurrentMembership(selectedMember)}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Member Since</Label>
-                  <p className="mt-1">{new Date(selectedMember.created_at).toLocaleDateString()}</p>
-                </div>
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Joined</Label>
+                <p className="mt-1">{new Date(selectedStaff.created_at).toLocaleDateString()}</p>
               </div>
             </div>
           )}

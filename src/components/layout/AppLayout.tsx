@@ -9,6 +9,7 @@ import type { User } from "@supabase/supabase-js";
 const pageTitles: Record<string, string> = {
   "/dashboard": "Dashboard",
   "/members": "Members",
+  "/staff": "Staff Management",
   "/plans": "Membership Plans",
   "/attendance": "Attendance",
   "/schedules": "Workout Schedules",

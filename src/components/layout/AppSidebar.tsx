@@ -9,6 +9,7 @@ import {
   BarChart3,
   Settings,
   Dumbbell,
+  Users2,
 } from "lucide-react";
 import {
   Sidebar,
@@ -25,6 +26,7 @@ import {
 const navigation = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Members", url: "/members", icon: Users },
+  { title: "Staff", url: "/staff", icon: Users2 },
   { title: "Plans", url: "/plans", icon: CreditCard },
   { title: "Attendance", url: "/attendance", icon: UserCheck },
   { title: "Schedules", url: "/schedules", icon: Calendar },
