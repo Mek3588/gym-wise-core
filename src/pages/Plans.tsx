@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -236,7 +237,7 @@ export default function Plans() {
                 />
               </div>
               <div>
-                <Label htmlFor="price">Price ($)</Label>
+                <Label htmlFor="price">Price (ETB)</Label>
                 <Input
                   id="price"
                   type="number"
@@ -324,7 +325,7 @@ export default function Plans() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <p className="font-semibold">${plan.price}</p>
+                      <p className="font-semibold">{plan.price} ETB</p>
                     </TableCell>
                     <TableCell>
                       {plan.duration_months} {plan.duration_months === 1 ? 'month' : 'months'}
