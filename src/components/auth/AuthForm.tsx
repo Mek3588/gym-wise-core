@@ -22,6 +22,13 @@ export function AuthForm({ mode, onToggleMode }: AuthFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
+  // Dummy users for testing
+  const dummyUsers = [
+    { email: "admin@gym.com", password: "admin123", role: "admin", name: "Admin User" },
+    { email: "trainer@gym.com", password: "trainer123", role: "trainer", name: "Trainer User" },
+    { email: "member@gym.com", password: "member123", role: "member", name: "Member User" },
+  ];
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
@@ -29,50 +36,38 @@ export function AuthForm({ mode, onToggleMode }: AuthFormProps) {
     setIsLoading(true);
 
     try {
-      if (mode === "login") {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (error) {
-          toast({
-            title: "Login failed",
-            description: error.message,
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Welcome back!",
-            description: "You have been successfully logged in.",
-          });
-        }
-      } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-            data: {
-              first_name: firstName,
-              last_name: lastName,
-              role: role,
-            },
+      // Check dummy credentials
+      const user = dummyUsers.find(u => u.email === email && u.password === password);
+      
+      if (user) {
+        // Store dummy session in localStorage
+        const dummySession = {
+          user: { 
+            id: user.email, 
+            email: user.email, 
+            user_metadata: { 
+              first_name: user.name.split(' ')[0],
+              last_name: user.name.split(' ')[1],
+              role: user.role 
+            }
           },
+          access_token: 'dummy-token'
+        };
+        localStorage.setItem('dummy-session', JSON.stringify(dummySession));
+        
+        toast({
+          title: "Welcome back!",
+          description: `Logged in as ${user.role}`,
         });
-
-        if (error) {
-          toast({
-            title: "Signup failed",
-            description: error.message,
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Account created!",
-            description: "Please check your email to verify your account.",
-          });
-        }
+        
+        // Redirect to dashboard
+        window.location.href = '/dashboard';
+      } else {
+        toast({
+          title: "Login failed",
+          description: "Invalid email or password. Try admin@gym.com/admin123",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       toast({
@@ -93,7 +88,7 @@ export function AuthForm({ mode, onToggleMode }: AuthFormProps) {
         </CardTitle>
         <CardDescription>
           {mode === "login"
-            ? "Sign in to your gym management account"
+            ? "Use: admin@gym.com/admin123, trainer@gym.com/trainer123, or member@gym.com/member123"
             : "Join our gym management system"}
         </CardDescription>
       </CardHeader>
