@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Members from "./pages/Members";
 import Attendance from "./pages/Attendance";
 import Staff from "./pages/Staff";
+import Plans from "./pages/Plans";
 import { AppLayout } from "./components/layout/AppLayout";
 
 const queryClient = new QueryClient();
@@ -26,7 +27,7 @@ const App = () => (
           <Route element={<AppLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/members" element={<Members />} />
-            <Route path="/plans" element={<div>Plans Page</div>} />
+            <Route path="/plans" element={<Plans />} />
             <Route path="/attendance" element={<Attendance />} />
             <Route path="/schedules" element={<div>Schedules Page</div>} />
             <Route path="/payments" element={<div>Payments Page</div>} />
