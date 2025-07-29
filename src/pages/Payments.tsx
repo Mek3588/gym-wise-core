@@ -18,7 +18,7 @@ interface Payment {
   user_id: string;
   membership_id: string | null;
   amount: number;
-  status: 'pending' | 'completed' | 'failed';
+  status: 'pending' | 'completed' | 'failed' | 'refunded';
   payment_method: string;
   payment_date: string | null;
   due_date: string | null;
@@ -49,10 +49,19 @@ export default function Payments() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [transferImage, setTransferImage] = useState<File | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    user_id: string;
+    amount: string;
+    status: 'pending' | 'completed' | 'failed' | 'refunded';
+    payment_method: string;
+    payment_date: string;
+    due_date: string;
+    transaction_id: string;
+    description: string;
+  }>({
     user_id: "",
     amount: "",
-    status: "pending" as const,
+    status: "pending",
     payment_method: "",
     payment_date: "",
     due_date: "",
