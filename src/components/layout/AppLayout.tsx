@@ -27,6 +27,16 @@ export function AppLayout() {
   useEffect(() => {
     // Check initial auth state
     const checkAuth = async () => {
+      // First check for dummy session
+      const dummySession = localStorage.getItem('dummy-session');
+      if (dummySession) {
+        const parsedSession = JSON.parse(dummySession);
+        setUser(parsedSession.user);
+        setIsLoading(false);
+        return;
+      }
+
+      // Fallback to Supabase auth
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
       if (!session?.user) {
@@ -37,11 +47,15 @@ export function AppLayout() {
 
     checkAuth();
 
-    // Listen for auth changes
+    // Listen for auth changes (Supabase only)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null);
-      if (!session?.user) {
-        navigate("/auth");
+      // Only update if no dummy session exists
+      const dummySession = localStorage.getItem('dummy-session');
+      if (!dummySession) {
+        setUser(session?.user ?? null);
+        if (!session?.user) {
+          navigate("/auth");
+        }
       }
     });
 

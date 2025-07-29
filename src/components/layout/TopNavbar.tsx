@@ -27,6 +27,20 @@ export function TopNavbar({ title }: TopNavbarProps) {
 
   useEffect(() => {
     const getUser = async () => {
+      // Check for dummy session first
+      const dummySession = localStorage.getItem('dummy-session');
+      if (dummySession) {
+        const parsedSession = JSON.parse(dummySession);
+        setUser(parsedSession.user);
+        setProfile({
+          first_name: parsedSession.user.user_metadata.first_name,
+          last_name: parsedSession.user.user_metadata.last_name,
+          role: parsedSession.user.user_metadata.role
+        });
+        return;
+      }
+
+      // Fallback to Supabase
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
 
@@ -43,10 +57,14 @@ export function TopNavbar({ title }: TopNavbarProps) {
     getUser();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null);
-      if (!session?.user) {
-        setProfile(null);
-        navigate("/auth");
+      // Only handle Supabase auth if no dummy session
+      const dummySession = localStorage.getItem('dummy-session');
+      if (!dummySession) {
+        setUser(session?.user ?? null);
+        if (!session?.user) {
+          setProfile(null);
+          navigate("/auth");
+        }
       }
     });
 
@@ -54,6 +72,15 @@ export function TopNavbar({ title }: TopNavbarProps) {
   }, [navigate]);
 
   const handleSignOut = async () => {
+    // Clear dummy session if it exists
+    const dummySession = localStorage.getItem('dummy-session');
+    if (dummySession) {
+      localStorage.removeItem('dummy-session');
+      navigate("/auth");
+      return;
+    }
+    
+    // Otherwise use Supabase signout
     await supabase.auth.signOut();
   };
 

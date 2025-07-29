@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +22,7 @@ export function AuthForm({ mode, onToggleMode }: AuthFormProps) {
   const [role, setRole] = useState<"member" | "trainer" | "admin">("member");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   // Dummy users for testing
   const dummyUsers = [
@@ -60,8 +62,8 @@ export function AuthForm({ mode, onToggleMode }: AuthFormProps) {
           description: `Logged in as ${user.role}`,
         });
         
-        // Redirect to dashboard
-        window.location.href = '/dashboard';
+        // Redirect to dashboard using navigate
+        navigate('/dashboard');
       } else {
         toast({
           title: "Login failed",
