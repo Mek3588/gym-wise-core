@@ -14,6 +14,7 @@ import Staff from "./pages/Staff";
 import Plans from "./pages/Plans";
 import Payments from "./pages/Payments";
 import Reports from "./pages/Reports";
+import Schedules from "./pages/Schedules";
 import { AppLayout } from "./components/layout/AppLayout";
 
 const queryClient = new QueryClient();
@@ -32,7 +33,7 @@ const App = () => (
             <Route path="/members" element={<Members />} />
             <Route path="/plans" element={<Plans />} />
             <Route path="/attendance" element={<Attendance />} />
-            <Route path="/schedules" element={<div>Schedules Page</div>} />
+            <Route path="/schedules" element={<Schedules />} />
             <Route path="/payments" element={<Payments />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/settings" element={<div>Settings Page</div>} />
