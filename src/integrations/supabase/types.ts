@@ -435,6 +435,7 @@ export type Database = {
           id: string
           last_name: string
           phone: string | null
+          phone_number: string | null
           profile_image_url: string | null
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
@@ -451,6 +452,7 @@ export type Database = {
           id: string
           last_name: string
           phone?: string | null
+          phone_number?: string | null
           profile_image_url?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
@@ -467,11 +469,117 @@ export type Database = {
           id?: string
           last_name?: string
           phone?: string | null
+          phone_number?: string | null
           profile_image_url?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }
         Relationships: []
+      }
+      sms_campaigns: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          failed_count: number | null
+          id: string
+          message: string
+          name: string
+          recipient_count: number | null
+          scheduled_at: string | null
+          sent_at: string | null
+          status: string
+          success_count: number | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          failed_count?: number | null
+          id?: string
+          message: string
+          name: string
+          recipient_count?: number | null
+          scheduled_at?: string | null
+          sent_at?: string | null
+          status?: string
+          success_count?: number | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          failed_count?: number | null
+          id?: string
+          message?: string
+          name?: string
+          recipient_count?: number | null
+          scheduled_at?: string | null
+          sent_at?: string | null
+          status?: string
+          success_count?: number | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sms_logs: {
+        Row: {
+          campaign_id: string | null
+          created_at: string
+          delivered_at: string | null
+          error_message: string | null
+          id: string
+          message: string
+          phone_number: string
+          recipient_id: string | null
+          sent_at: string | null
+          status: string
+          twilio_sid: string | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          error_message?: string | null
+          id?: string
+          message: string
+          phone_number: string
+          recipient_id?: string | null
+          sent_at?: string | null
+          status?: string
+          twilio_sid?: string | null
+        }
+        Update: {
+          campaign_id?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          error_message?: string | null
+          id?: string
+          message?: string
+          phone_number?: string
+          recipient_id?: string | null
+          sent_at?: string | null
+          status?: string
+          twilio_sid?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_logs_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "sms_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_logs_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       workout_schedules: {
         Row: {

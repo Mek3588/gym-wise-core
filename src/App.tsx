@@ -15,6 +15,7 @@ import Plans from "./pages/Plans";
 import Payments from "./pages/Payments";
 import Reports from "./pages/Reports";
 import Schedules from "./pages/Schedules";
+import SMS from "./pages/SMS";
 import { AppLayout } from "./components/layout/AppLayout";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/attendance" element={<Attendance />} />
             <Route path="/schedules" element={<Schedules />} />
             <Route path="/payments" element={<Payments />} />
+            <Route path="/sms" element={<SMS />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/settings" element={<div>Settings Page</div>} />
             <Route path="/staff" element={<Staff />} />

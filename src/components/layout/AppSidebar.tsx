@@ -10,6 +10,7 @@ import {
   Settings,
   Dumbbell,
   Users2,
+  MessageSquare,
 } from "lucide-react";
 import {
   Sidebar,
@@ -31,6 +32,7 @@ const navigation = [
   { title: "Attendance", url: "/attendance", icon: UserCheck },
   { title: "Schedules", url: "/schedules", icon: Calendar },
   { title: "Payments", url: "/payments", icon: DollarSign },
+  { title: "SMS", url: "/sms", icon: MessageSquare },
   { title: "Reports", url: "/reports", icon: BarChart3 },
   { title: "Settings", url: "/settings", icon: Settings },
 ];
