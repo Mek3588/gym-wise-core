@@ -23,26 +23,31 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { useRoleAccess } from "@/hooks/useRoleAccess";
+import { Badge } from "@/components/ui/badge";
 
-const navigation = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Members", url: "/members", icon: Users },
-  { title: "Staff", url: "/staff", icon: Users2 },
-  { title: "Plans", url: "/plans", icon: CreditCard },
-  { title: "Attendance", url: "/attendance", icon: UserCheck },
-  { title: "Schedules", url: "/schedules", icon: Calendar },
-  { title: "Payments", url: "/payments", icon: DollarSign },
-  { title: "SMS", url: "/sms", icon: MessageSquare },
-  { title: "Reports", url: "/reports", icon: BarChart3 },
-  { title: "Settings", url: "/settings", icon: Settings },
+const allNavigation = [
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, roles: ['admin', 'trainer', 'member'] },
+  { title: "Members", url: "/members", icon: Users, roles: ['admin', 'trainer'] },
+  { title: "Staff", url: "/staff", icon: Users2, roles: ['admin'] },
+  { title: "Plans", url: "/plans", icon: CreditCard, roles: ['admin'] },
+  { title: "Attendance", url: "/attendance", icon: UserCheck, roles: ['admin', 'trainer', 'member'] },
+  { title: "Schedules", url: "/schedules", icon: Calendar, roles: ['admin', 'trainer', 'member'] },
+  { title: "Payments", url: "/payments", icon: DollarSign, roles: ['admin', 'trainer'] },
+  { title: "SMS", url: "/sms", icon: MessageSquare, roles: ['admin', 'trainer'] },
+  { title: "Reports", url: "/reports", icon: BarChart3, roles: ['admin', 'trainer'] },
+  { title: "Settings", url: "/settings", icon: Settings, roles: ['admin', 'trainer', 'member'] },
 ];
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
+  const { user } = useRoleAccess();
 
   const isActive = (path: string) => location.pathname === path;
   const collapsed = state === "collapsed";
+  
+  const navigation = user ? allNavigation.filter(item => item.roles.includes(user.role)) : allNavigation;
 
   return (
     <Sidebar className={collapsed ? "w-16" : "w-64"} collapsible="icon">
