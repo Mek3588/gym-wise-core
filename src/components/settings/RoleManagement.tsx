@@ -227,7 +227,7 @@ export function RoleManagement({ currentUserRole }: RoleManagementProps) {
           ) : (
             <div className="space-y-3">
               {filteredUsers.map((user) => (
-                <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div key={user.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3">
                       <div>
@@ -243,7 +243,7 @@ export function RoleManagement({ currentUserRole }: RoleManagementProps) {
                   </div>
                   
                   {canModifyRole(user.role, user.role) && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                       <Select
                         value={user.role}
                         onValueChange={(newRole: string) => {
@@ -252,7 +252,7 @@ export function RoleManagement({ currentUserRole }: RoleManagementProps) {
                           }
                         }}
                       >
-                        <SelectTrigger className="w-32">
+                        <SelectTrigger className="w-full sm:w-32">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>

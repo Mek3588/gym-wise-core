@@ -65,10 +65,10 @@ const Settings = () => {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-3 sm:p-6 space-y-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Settings</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">Settings</h1>
           <p className="text-muted-foreground">
             Manage your account, roles, and system preferences
           </p>
@@ -80,7 +80,7 @@ const Settings = () => {
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-4">
+        <TabsList className="grid w-full max-w-full sm:max-w-2xl mx-auto grid-cols-2 sm:grid-cols-4">
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="w-4 h-4" />
             Profile

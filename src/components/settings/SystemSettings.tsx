@@ -342,11 +342,11 @@ export function SystemSettings() {
       </Card>
 
       {/* Action Buttons */}
-      <div className="flex justify-between">
-        <Button variant="outline" onClick={resetToDefaults}>
+      <div className="flex flex-col sm:flex-row justify-between gap-4">
+        <Button variant="outline" onClick={resetToDefaults} className="w-full sm:w-auto">
           Reset to Defaults
         </Button>
-        <Button onClick={handleSave} disabled={isSaving}>
+        <Button onClick={handleSave} disabled={isSaving} className="w-full sm:w-auto">
           <Save className="w-4 h-4 mr-2" />
           {isSaving ? "Saving..." : "Save Settings"}
         </Button>

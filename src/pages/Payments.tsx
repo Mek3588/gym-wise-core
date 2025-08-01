@@ -289,9 +289,9 @@ export default function Payments() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Payment Management</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Payment Management</h1>
           <p className="text-muted-foreground">Manage payments, receipts, and transactions</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -301,20 +301,20 @@ export default function Payments() {
                 setEditingPayment(null);
                 resetForm();
               }}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
             >
               <Plus className="h-4 w-4 mr-2" />
               Add Payment
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-xl font-semibold">
                 {editingPayment ? 'Edit Payment' : 'Add New Payment'}
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="user_id">Employee</Label>
                   <Select value={formData.user_id} onValueChange={(value) => setFormData({...formData, user_id: value})}>
@@ -343,7 +343,7 @@ export default function Payments() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="status">Status</Label>
                   <Select value={formData.status} onValueChange={(value: any) => setFormData({...formData, status: value})}>
@@ -369,7 +369,7 @@ export default function Payments() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="payment_date">Payment Date</Label>
                   <Input
@@ -424,11 +424,11 @@ export default function Payments() {
                 </p>
               </div>
 
-              <div className="flex justify-end space-x-3 pt-4">
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+              <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 pt-4">
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="w-full sm:w-auto">
                   Cancel
                 </Button>
-                <Button type="submit" className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700">
+                <Button type="submit" className="w-full sm:w-auto bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700">
                   {editingPayment ? 'Update' : 'Create'} Payment
                 </Button>
               </div>

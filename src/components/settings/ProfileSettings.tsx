@@ -270,8 +270,8 @@ export function ProfileSettings({ currentUser, onUserUpdate }: ProfileSettingsPr
         </CardContent>
       </Card>
 
-      <div className="flex justify-end">
-        <Button type="submit" disabled={isLoading} className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row justify-end gap-4">
+        <Button type="submit" disabled={isLoading} className="w-full sm:w-auto flex items-center gap-2">
           <Save className="w-4 h-4" />
           {isLoading ? "Saving..." : "Save Changes"}
         </Button>

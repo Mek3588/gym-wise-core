@@ -99,13 +99,13 @@ export function TopNavbar({ title }: TopNavbarProps) {
   };
 
   return (
-    <header className="h-16 border-b border-border bg-background px-4 flex items-center justify-between">
-      <div className="flex items-center gap-4">
+    <header className="h-16 border-b border-border bg-background px-3 sm:px-4 flex items-center justify-between">
+      <div className="flex items-center gap-2 sm:gap-4 min-w-0">
         <SidebarTrigger />
-        <h1 className="text-2xl font-semibold text-foreground">{title}</h1>
+        <h1 className="text-xl sm:text-2xl font-semibold text-foreground truncate">{title}</h1>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4">
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
           <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs">
@@ -120,8 +120,8 @@ export function TopNavbar({ title }: TopNavbarProps) {
                 <AvatarImage src={profile?.profile_image_url} />
                 <AvatarFallback>{getInitials()}</AvatarFallback>
               </Avatar>
-              <div className="hidden md:block text-left">
-                <p className="text-sm font-medium">{getDisplayName()}</p>
+              <div className="hidden sm:block text-left">
+                <p className="text-sm font-medium truncate max-w-32">{getDisplayName()}</p>
                 <p className="text-xs text-muted-foreground capitalize">
                   {profile?.role || "Member"}
                 </p>

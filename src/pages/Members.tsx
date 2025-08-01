@@ -373,14 +373,14 @@ export default function Members() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Members</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">Members</h1>
           <p className="text-muted-foreground">Manage gym members and their profiles</p>
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={resetForm}>
+            <Button onClick={resetForm} className="w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" />
               Add Member
             </Button>
@@ -393,7 +393,7 @@ export default function Members() {
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">First Name</Label>
                   <Input 
@@ -423,7 +423,7 @@ export default function Members() {
                   placeholder="john@example.com" 
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone</Label>
                   <Input 
@@ -443,7 +443,7 @@ export default function Members() {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="gender">Gender</Label>
                   <Select value={formData.gender} onValueChange={(value) => setFormData({...formData, gender: value})}>
@@ -480,7 +480,7 @@ export default function Members() {
                   placeholder="Full address" 
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="emergencyName">Emergency Contact Name</Label>
                   <Input 
