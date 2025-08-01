@@ -150,15 +150,15 @@ export function SystemSettings() {
               <div className="text-sm text-muted-foreground">Total Members</div>
             </div>
             <div className="p-4 border rounded-lg text-center">
-              <div className="text-2xl font-bold text-green-600">{systemStats.totalPayments}</div>
+              <div className="text-2xl font-bold text-secondary-foreground">{systemStats.totalPayments}</div>
               <div className="text-sm text-muted-foreground">Total Payments</div>
             </div>
             <div className="p-4 border rounded-lg text-center">
-              <div className="text-2xl font-bold text-blue-600">{systemStats.totalClasses}</div>
+              <div className="text-2xl font-bold text-accent-foreground">{systemStats.totalClasses}</div>
               <div className="text-sm text-muted-foreground">Total Classes</div>
             </div>
             <div className="p-4 border rounded-lg text-center">
-              <div className="text-2xl font-bold text-purple-600">{systemStats.totalSMS}</div>
+              <div className="text-2xl font-bold text-primary">{systemStats.totalSMS}</div>
               <div className="text-sm text-muted-foreground">SMS Sent</div>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +40,23 @@ export function ProfileSettings({ currentUser, onUserUpdate }: ProfileSettingsPr
     emergency_contact_name: currentUser?.emergency_contact_name || "",
     emergency_contact_phone: currentUser?.emergency_contact_phone || "",
   });
+
+  // Update form data when currentUser changes
+  useEffect(() => {
+    if (currentUser) {
+      setFormData({
+        first_name: currentUser.first_name || "",
+        last_name: currentUser.last_name || "",
+        email: currentUser.email || "",
+        phone: currentUser.phone || currentUser.phone_number || "",
+        address: currentUser.address || "",
+        date_of_birth: currentUser.date_of_birth || "",
+        gender: currentUser.gender || "",
+        emergency_contact_name: currentUser.emergency_contact_name || "",
+        emergency_contact_phone: currentUser.emergency_contact_phone || "",
+      });
+    }
+  }, [currentUser]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
