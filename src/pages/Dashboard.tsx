@@ -71,7 +71,7 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <div className="p-6 space-y-8 bg-background min-h-screen">
+    <div className="space-y-8">
       {/* Welcome Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground mb-2">Dashboard</h1>
