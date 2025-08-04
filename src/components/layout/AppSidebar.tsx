@@ -50,39 +50,71 @@ export function AppSidebar() {
   const navigation = user ? allNavigation.filter(item => item.roles.includes(user.role)) : allNavigation;
 
   return (
-    <Sidebar className={collapsed ? "w-16" : "w-64"} collapsible="icon">
-      <SidebarContent>
-        <div className="p-4 border-b border-sidebar-border">
-          <div className="flex items-center gap-2">
-            <div className="bg-primary rounded-lg p-2">
+    <Sidebar className={collapsed ? "w-16" : "w-72"} collapsible="icon">
+      <SidebarContent className="bg-sidebar">
+        <div className="p-6 border-b border-sidebar-border/50">
+          <div className="flex items-center gap-3">
+            <div className="bg-gradient-to-br from-primary to-primary/80 rounded-xl p-3 shadow-lg">
               <Dumbbell className="h-6 w-6 text-primary-foreground" />
             </div>
             {!collapsed && (
               <div>
-                <h1 className="font-bold text-sidebar-foreground">FitTracker</h1>
-                <p className="text-xs text-sidebar-foreground/60">Gym Management</p>
+                <h1 className="font-bold text-lg text-sidebar-foreground">FitTracker</h1>
+                <p className="text-xs text-sidebar-foreground/60 font-medium">Gym Management Pro</p>
               </div>
             )}
           </div>
         </div>
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navigation.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                    <NavLink to={item.url} className="flex items-center gap-2">
-                      <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        <div className="p-4">
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-xs font-semibold text-sidebar-foreground/70 mb-3">
+              {!collapsed ? "MAIN NAVIGATION" : "NAV"}
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu className="space-y-1">
+                {navigation.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton 
+                      asChild 
+                      isActive={isActive(item.url)}
+                      className={`
+                        h-11 rounded-lg transition-all duration-200
+                        ${isActive(item.url) 
+                          ? 'bg-primary/10 text-primary border border-primary/20 shadow-sm' 
+                          : 'hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
+                        }
+                      `}
+                    >
+                      <NavLink to={item.url} className="flex items-center gap-3 px-3">
+                        <item.icon className={`h-5 w-5 ${isActive(item.url) ? 'text-primary' : ''}`} />
+                        {!collapsed && (
+                          <span className="font-medium">{item.title}</span>
+                        )}
+                        {!collapsed && isActive(item.url) && (
+                          <div className="ml-auto w-2 h-2 bg-primary rounded-full"></div>
+                        )}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </div>
+
+        {!collapsed && (
+          <div className="mt-auto p-4 border-t border-sidebar-border/50">
+            <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Badge variant="secondary" className="text-xs bg-primary/20 text-primary">Pro</Badge>
+              </div>
+              <p className="text-xs text-sidebar-foreground/70">
+                Advanced gym management features enabled
+              </p>
+            </div>
+          </div>
+        )}
       </SidebarContent>
     </Sidebar>
   );

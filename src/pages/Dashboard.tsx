@@ -71,58 +71,72 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-8 bg-background min-h-screen">
+      {/* Welcome Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-foreground mb-2">Dashboard</h1>
+        <p className="text-muted-foreground">Welcome back! Here's what's happening at your gym today.</p>
+      </div>
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Members</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+        <Card className="border-0 shadow-md bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/50 dark:to-blue-900/50">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300">Total Members</CardTitle>
+            <div className="p-2 bg-blue-500/10 rounded-lg">
+              <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalMembers}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-3xl font-bold text-blue-900 dark:text-blue-100">{stats.totalMembers}</div>
+            <p className="text-xs text-blue-600 dark:text-blue-400 flex items-center mt-2">
               <TrendingUp className="inline h-3 w-3 mr-1" />
               +12% from last month
             </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+        <Card className="border-0 shadow-md bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/50 dark:to-green-900/50">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-sm font-medium text-green-700 dark:text-green-300">Monthly Revenue</CardTitle>
+            <div className="p-2 bg-green-500/10 rounded-lg">
+              <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${stats.monthlyRevenue.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-3xl font-bold text-green-900 dark:text-green-100">${stats.monthlyRevenue.toLocaleString()}</div>
+            <p className="text-xs text-green-600 dark:text-green-400 flex items-center mt-2">
               <TrendingUp className="inline h-3 w-3 mr-1" />
               +8% from last month
             </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Attendance Today</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+        <Card className="border-0 shadow-md bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/50 dark:to-purple-900/50">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-sm font-medium text-purple-700 dark:text-purple-300">Attendance Today</CardTitle>
+            <div className="p-2 bg-purple-500/10 rounded-lg">
+              <Calendar className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.attendanceToday}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-3xl font-bold text-purple-900 dark:text-purple-100">{stats.attendanceToday}</div>
+            <p className="text-xs text-purple-600 dark:text-purple-400 mt-2">
               Real-time tracking
             </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Classes</CardTitle>
-            <Badge variant="secondary">{stats.activeClasses}</Badge>
+        <Card className="border-0 shadow-md bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950/50 dark:to-orange-900/50">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-sm font-medium text-orange-700 dark:text-orange-300">Active Classes</CardTitle>
+            <Badge variant="secondary" className="bg-orange-500/10 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800">
+              {stats.activeClasses}
+            </Badge>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.activeClasses}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-3xl font-bold text-orange-900 dark:text-orange-100">{stats.activeClasses}</div>
+            <p className="text-xs text-orange-600 dark:text-orange-400 mt-2">
               Scheduled this week
             </p>
           </CardContent>
@@ -130,22 +144,22 @@ export default function Dashboard() {
       </div>
 
       {/* Recent Activity */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
+      <Card className="border-0 shadow-md">
+        <CardHeader className="bg-gradient-to-r from-card to-card/80 rounded-t-lg">
+          <CardTitle className="text-xl font-semibold">Recent Activity</CardTitle>
           <CardDescription>Latest member check-ins and activities</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
+        <CardContent className="pt-6">
+          <div className="space-y-6">
             {recentActivity.length > 0 ? (
               recentActivity.map((activity, index) => (
-                <div key={index} className="flex items-center justify-between border-b pb-2 last:border-b-0">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                      <Users className="h-4 w-4 text-primary" />
+                <div key={index} className="flex items-center justify-between p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors border border-border/50">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center ring-2 ring-primary/20">
+                      <Users className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <p className="font-medium">
+                      <p className="font-medium text-foreground">
                         {activity.profiles?.first_name} {activity.profiles?.last_name}
                       </p>
                       <p className="text-sm text-muted-foreground">
@@ -153,15 +167,22 @@ export default function Dashboard() {
                       </p>
                     </div>
                   </div>
-                  <Badge variant="outline">
+                  <Badge 
+                    variant={activity.check_out_time ? "default" : "secondary"}
+                    className={activity.check_out_time ? "bg-green-500/10 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800" : ""}
+                  >
                     {activity.check_out_time ? "Completed" : "Active"}
                   </Badge>
                 </div>
               ))
             ) : (
-              <p className="text-muted-foreground text-center py-4">
-                No recent activity to display
-              </p>
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Users className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <p className="text-muted-foreground">No recent activity to display</p>
+                <p className="text-sm text-muted-foreground mt-1">Check-ins will appear here once members start arriving</p>
+              </div>
             )}
           </div>
         </CardContent>

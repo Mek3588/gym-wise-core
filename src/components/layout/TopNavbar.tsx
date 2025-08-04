@@ -27,15 +27,18 @@ export function TopNavbar({ title }: TopNavbarProps) {
   useNotifications();
 
   return (
-    <header className="h-16 border-b border-border bg-background px-3 sm:px-4 flex items-center justify-between">
-      <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-        <SidebarTrigger />
-        <h1 className="text-xl sm:text-2xl font-semibold text-foreground truncate">{title}</h1>
+    <header className="h-16 border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-3 sm:px-6 flex items-center justify-between shadow-sm">
+      <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+        <SidebarTrigger className="hover:bg-accent/50 transition-colors" />
+        <div className="flex items-center gap-3">
+          <div className="w-1 h-8 bg-primary rounded-full hidden sm:block"></div>
+          <h1 className="text-xl sm:text-2xl font-semibold text-foreground truncate">{title}</h1>
+        </div>
       </div>
 
-      <div className="flex items-center gap-2 sm:gap-4">
+      <div className="flex items-center gap-3 sm:gap-4">
         <NotificationDropdown />
-
+        <div className="w-px h-6 bg-border hidden sm:block"></div>
         <ProfileDropdown />
       </div>
     </header>
