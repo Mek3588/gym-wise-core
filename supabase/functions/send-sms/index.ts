@@ -25,14 +25,15 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID');
-    const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN');
-    const TWILIO_PHONE_NUMBER = Deno.env.get('TWILIO_PHONE_NUMBER');
+    const AFRO_API_KEY = Deno.env.get('AFROMESSAGE_API_KEY');
+    const AFRO_IDENTIFIER_ID = Deno.env.get('AFROMESSAGE_IDENTIFIER_ID');
+    const AFRO_SENDER_NAME = Deno.env.get('AFROMESSAGE_SENDER_NAME');
+    const AFRO_BASE_URL = Deno.env.get('AFROMESSAGE_BASE_URL') || 'https://api.afromessage.com/v1/sms/send';
 
-    if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_PHONE_NUMBER) {
-      console.error('Missing Twilio credentials');
+    if (!AFRO_API_KEY || !AFRO_IDENTIFIER_ID || !AFRO_SENDER_NAME) {
+      console.error('Missing AfroMessage credentials');
       return new Response(
-        JSON.stringify({ error: 'Twilio credentials not configured' }),
+        JSON.stringify({ error: 'AfroMessage credentials not configured' }),
         { 
           status: 500, 
           headers: { 'Content-Type': 'application/json', ...corsHeaders } 
@@ -51,7 +52,10 @@ const handler = async (req: Request): Promise<Response> => {
     );
 
     // Create authorization header for Twilio
-    const auth = btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`);
+    const afroHeaders = {
+      'Authorization': `Bearer ${AFRO_API_KEY}`,
+      'Content-Type': 'application/json',
+    };
 
     let successCount = 0;
     let failedCount = 0;
@@ -66,26 +70,21 @@ const handler = async (req: Request): Promise<Response> => {
           .replace(/\{lastName\}/g, recipient.lastName)
           .replace(/\{fullName\}/g, `${recipient.firstName} ${recipient.lastName}`);
 
-        // Send SMS via Twilio
-        const twilioResponse = await fetch(
-          `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`,
-          {
-            method: 'POST',
-            headers: {
-              'Authorization': `Basic ${auth}`,
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: new URLSearchParams({
-              From: TWILIO_PHONE_NUMBER,
-              To: recipient.phone,
-              Body: personalizedMessage,
-            }),
-          }
-        );
+        // Send SMS via AfroMessage
+        const afroResponse = await fetch(AFRO_BASE_URL, {
+          method: 'POST',
+          headers: afroHeaders,
+          body: JSON.stringify({
+            identifier: AFRO_IDENTIFIER_ID,
+            sender: AFRO_SENDER_NAME,
+            to: recipient.phone,
+            message: personalizedMessage,
+          }),
+        });
 
-        const twilioData = await twilioResponse.json();
+        const afroData = await afroResponse.json();
 
-        if (twilioResponse.ok) {
+        if (afroResponse.ok && (afroData?.success === true || afroData?.status === 'success' || afroData?.code === 200)) {
           successCount++;
           smsLogs.push({
             campaign_id: campaignId,
@@ -93,7 +92,7 @@ const handler = async (req: Request): Promise<Response> => {
             phone_number: recipient.phone,
             message: personalizedMessage,
             status: 'sent',
-            twilio_sid: twilioData.sid,
+            twilio_sid: afroData?.id || afroData?.messageId || afroData?.data?.id || null,
             sent_at: new Date().toISOString(),
           });
         } else {
@@ -104,7 +103,7 @@ const handler = async (req: Request): Promise<Response> => {
             phone_number: recipient.phone,
             message: personalizedMessage,
             status: 'failed',
-            error_message: twilioData.message || 'Unknown error',
+            error_message: afroData?.message || afroData?.error || JSON.stringify(afroData),
           });
         }
       } catch (error) {
