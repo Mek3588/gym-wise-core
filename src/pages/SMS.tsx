@@ -20,6 +20,7 @@ interface Profile {
   first_name: string;
   last_name: string;
   phone_number?: string;
+  phone?: string;
   role: string;
 }
 
@@ -81,6 +82,9 @@ export default function SMS() {
     scheduledAt: "",
   });
 
+  const getPhone = (p: { phone_number?: string | null; phone?: string | null }) =>
+    (p.phone_number || p.phone || '').trim();
+
   useEffect(() => {
     fetchMembers();
     fetchCampaigns();
@@ -92,11 +96,11 @@ export default function SMS() {
     try {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, first_name, last_name, phone_number, role")
-        .not("phone_number", "is", null);
+        .select("id, first_name, last_name, phone_number, phone, role");
 
       if (error) throw error;
-      setMembers(data || []);
+      const withPhones = (data || []).filter((m: any) => getPhone(m));
+      setMembers(withPhones as Profile[]);
     } catch (error) {
       console.error("Error fetching members:", error);
       toast({
@@ -153,17 +157,17 @@ export default function SMS() {
           amount,
           due_date,
           status,
-          profiles:user_id(first_name, last_name, phone_number)
+          profiles:user_id(first_name, last_name, phone_number, phone)
         `)
         .eq("status", "pending")
-        .lt("due_date", today)
-        .not("profiles.phone_number", "is", null);
+        .lt("due_date", today);
 
       if (error) throw error;
-      setOverduePayments(data?.map(payment => ({
+      const mapped = (data || []).map((payment: any) => ({
         ...payment,
-        user: payment.profiles || { first_name: "Unknown", last_name: "User", phone_number: null }
-      })) || []);
+        user: payment.profiles || { first_name: "Unknown", last_name: "User", phone_number: null, phone: null }
+      })).filter((p: any) => getPhone(p.user));
+      setOverduePayments(mapped);
     } catch (error) {
       console.error("Error fetching overdue payments:", error);
     }
@@ -178,7 +182,7 @@ export default function SMS() {
   };
 
   const selectAllMembers = () => {
-    const memberIds = members.filter(m => m.phone_number).map(m => m.id);
+    const memberIds = members.filter(m => getPhone(m)).map(m => m.id);
     setSelectedMembers(memberIds);
   };
 
@@ -215,7 +219,7 @@ export default function SMS() {
       // Prepare recipients
       const recipients = overduePayments.map(payment => ({
         id: payment.user_id,
-        phone: payment.user.phone_number!,
+        phone: getPhone(payment.user)!,
         firstName: payment.user.first_name,
         lastName: payment.user.last_name,
       }));
@@ -292,10 +296,10 @@ export default function SMS() {
 
       // Prepare recipients
       const recipients = members
-        .filter(member => selectedMembers.includes(member.id) && member.phone_number)
+        .filter(member => selectedMembers.includes(member.id) && getPhone(member))
         .map(member => ({
           id: member.id,
-          phone: member.phone_number!,
+          phone: getPhone(member)!,
           firstName: member.first_name,
           lastName: member.last_name,
         }));
@@ -474,23 +478,29 @@ export default function SMS() {
                   </div>
                   
                   <div className="max-h-40 overflow-y-auto border rounded-md p-4 space-y-2">
-                    {members.filter(member => member.phone_number).map((member) => (
-                      <div key={member.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={member.id}
-                          checked={selectedMembers.includes(member.id)}
-                          onCheckedChange={(checked) => 
-                            handleMemberSelection(member.id, checked as boolean)
-                          }
-                        />
-                        <label htmlFor={member.id} className="text-sm cursor-pointer">
-                          {member.first_name} {member.last_name} - {member.phone_number}
-                          <Badge variant="outline" className="ml-2">
-                            {member.role}
-                          </Badge>
-                        </label>
-                      </div>
-                    ))}
+                    {members.filter(member => getPhone(member)).length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        No members with phone numbers found. Add phone numbers in the Members page and refresh.
+                      </p>
+                    ) : (
+                      members.filter(member => getPhone(member)).map((member) => (
+                        <div key={member.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={member.id}
+                            checked={selectedMembers.includes(member.id)}
+                            onCheckedChange={(checked) => 
+                              handleMemberSelection(member.id, checked as boolean)
+                            }
+                          />
+                          <label htmlFor={member.id} className="text-sm cursor-pointer">
+                            {member.first_name} {member.last_name} - {getPhone(member)}
+                            <Badge variant="outline" className="ml-2">
+                              {member.role}
+                            </Badge>
+                          </label>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
 
@@ -522,7 +532,7 @@ export default function SMS() {
           <CardContent>
             <div className="text-2xl font-bold">{members.length}</div>
             <p className="text-xs text-muted-foreground">
-              {members.filter(m => m.phone_number).length} with phone numbers
+              {members.filter(m => getPhone(m)).length} with phone numbers
             </p>
           </CardContent>
         </Card>
@@ -727,7 +737,7 @@ export default function SMS() {
                       <TableCell>
                         {payment.user.first_name} {payment.user.last_name}
                       </TableCell>
-                      <TableCell>{payment.user.phone_number}</TableCell>
+                      <TableCell>{getPhone(payment.user)}</TableCell>
                       <TableCell>${Number(payment.amount).toFixed(2)}</TableCell>
                       <TableCell>{format(new Date(payment.due_date), "PPP")}</TableCell>
                       <TableCell>
