@@ -43,7 +43,7 @@ export default function Members() {
   const [members, setMembers] = useState<Member[]>([]);
   const [membershipPlans, setMembershipPlans] = useState<MembershipPlan[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [roleFilter, setRoleFilter] = useState("all");
+  const [roleFilter, setRoleFilter] = useState("member");
   const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
@@ -90,6 +90,7 @@ export default function Members() {
             )
           )
         `)
+        .eq("role", "member")
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -153,7 +154,7 @@ export default function Members() {
           data: {
             first_name: formData.first_name,
             last_name: formData.last_name,
-            role: formData.role,
+            role: "member",
           },
         },
       });
@@ -235,7 +236,7 @@ export default function Members() {
           last_name: formData.last_name,
           email: formData.email,
           phone: formData.phone,
-          role: formData.role,
+          role: "member",
           address: formData.address,
           date_of_birth: formData.date_of_birth || null,
           gender: formData.gender || null,
@@ -457,19 +458,6 @@ export default function Members() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="role">Role</Label>
-                  <Select value={formData.role} onValueChange={(value: "member" | "trainer" | "admin") => setFormData({...formData, role: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="member">Member</SelectItem>
-                      <SelectItem value="trainer">Trainer</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="address">Address</Label>
@@ -555,10 +543,7 @@ export default function Members() {
                 <SelectValue placeholder="Role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Roles</SelectItem>
                 <SelectItem value="member">Members</SelectItem>
-                <SelectItem value="trainer">Trainers</SelectItem>
-                <SelectItem value="admin">Admins</SelectItem>
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -766,19 +751,6 @@ export default function Members() {
                     <SelectItem value="male">Male</SelectItem>
                     <SelectItem value="female">Female</SelectItem>
                     <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="editRole">Role</Label>
-                <Select value={formData.role} onValueChange={(value: "member" | "trainer" | "admin") => setFormData({...formData, role: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="member">Member</SelectItem>
-                    <SelectItem value="trainer">Trainer</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
