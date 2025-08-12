@@ -146,30 +146,62 @@ export default function Members() {
 
   const handleAdd = async () => {
     try {
-      // First, register the user in Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: Math.random().toString(36).slice(-8), // Generate temporary password
-        options: {
-          data: {
-            first_name: formData.first_name,
-            last_name: formData.last_name,
-            role: "member",
-          },
-        },
-      });
-
-      if (authError) {
+      // Require phone number
+      if (!formData.phone.trim()) {
         toast({
-          title: "Error",
-          description: authError.message,
+          title: "Phone number required",
+          description: "Please enter a phone number.",
           variant: "destructive",
         });
         return;
       }
 
-      // Then update the profile with additional details
-      if (authData.user) {
+      // Enforce unique phone number
+      const { data: existing } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("phone", formData.phone)
+        .limit(1);
+
+      if (existing && existing.length > 0) {
+        toast({
+          title: "Duplicate phone number",
+          description: "This phone number is already in use.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Create user without sending emails (admin API)
+      const createPayload: any = {
+        user_metadata: {
+          first_name: formData.first_name,
+          last_name: formData.last_name,
+          role: "member",
+        },
+        phone: formData.phone,
+        phone_confirm: true,
+      };
+
+      // Optionally include email but mark as confirmed to avoid email sending
+      if (formData.email) {
+        createPayload.email = formData.email;
+        createPayload.email_confirm = true;
+      }
+
+      const { data: adminData, error: adminError } = await supabase.auth.admin.createUser(createPayload);
+
+      if (adminError) {
+        toast({
+          title: "Error",
+          description: adminError.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (adminData?.user) {
+        // Update profile with additional details
         const { error: profileError } = await supabase
           .from("profiles")
           .update({
@@ -181,7 +213,7 @@ export default function Members() {
             emergency_contact_name: formData.emergency_contact_name || null,
             emergency_contact_phone: formData.emergency_contact_phone || null,
           })
-          .eq("id", authData.user.id);
+          .eq("id", adminData.user.id);
 
         if (profileError) {
           console.error("Profile update error:", profileError);
@@ -189,21 +221,19 @@ export default function Members() {
 
         // Create membership if plan selected
         if (formData.membership_plan_id) {
-          const plan = membershipPlans.find(p => p.id === formData.membership_plan_id);
+          const plan = membershipPlans.find((p) => p.id === formData.membership_plan_id);
           if (plan) {
             const startDate = new Date(formData.membership_start_date);
             const endDate = new Date(startDate);
             endDate.setMonth(endDate.getMonth() + plan.duration_months);
 
-            await supabase
-              .from("memberships")
-              .insert({
-                user_id: authData.user.id,
-                plan_id: formData.membership_plan_id,
-                start_date: formData.membership_start_date,
-                end_date: endDate.toISOString().split('T')[0],
-                status: "active",
-              });
+            await supabase.from("memberships").insert({
+              user_id: adminData.user.id,
+              plan_id: formData.membership_plan_id,
+              start_date: formData.membership_start_date,
+              end_date: endDate.toISOString().split("T")[0],
+              status: "active",
+            });
           }
         }
       }
@@ -230,12 +260,31 @@ export default function Members() {
     if (!selectedMember) return;
 
     try {
+      // Enforce unique phone for other users
+      if (formData.phone?.trim()) {
+        const { data: dup } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("phone", formData.phone)
+          .neq("id", selectedMember.id)
+          .limit(1);
+
+        if (dup && dup.length > 0) {
+          toast({
+            title: "Duplicate phone number",
+            description: "This phone number is already in use by another user.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
       const { error } = await supabase
         .from("profiles")
         .update({
           first_name: formData.first_name,
           last_name: formData.last_name,
-          email: formData.email,
+          email: formData.email || null,
           phone: formData.phone,
           role: "member",
           address: formData.address,
@@ -327,7 +376,7 @@ export default function Members() {
     const matchesSearch = 
       member.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       member.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.email.toLowerCase().includes(searchTerm.toLowerCase());
+      (member.email || "").toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesRole = roleFilter === "all" || member.role === roleFilter;
 
@@ -430,6 +479,8 @@ export default function Members() {
                   <Label htmlFor="phone">Phone</Label>
                   <Input 
                     id="phone" 
+                    type="tel"
+                    required
                     value={formData.phone}
                     onChange={(e) => setFormData({...formData, phone: e.target.value})}
                     placeholder="+1 (555) 123-4567" 
@@ -727,6 +778,8 @@ export default function Members() {
                 <Label htmlFor="editPhone">Phone</Label>
                 <Input 
                   id="editPhone" 
+                  type="tel"
+                  required
                   value={formData.phone}
                   onChange={(e) => setFormData({...formData, phone: e.target.value})}
                 />

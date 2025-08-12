@@ -121,30 +121,59 @@ export default function Staff() {
 
   const handleAdd = async () => {
     try {
-      // Create user in Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: Math.random().toString(36).slice(-8), // Generate temporary password
-        options: {
-          data: {
-            first_name: formData.first_name,
-            last_name: formData.last_name,
-            role: formData.role,
-          },
-        },
-      });
-
-      if (authError) {
+      if (!formData.phone.trim()) {
         toast({
-          title: "Error",
-          description: authError.message,
+          title: "Phone number required",
+          description: "Please enter a phone number.",
           variant: "destructive",
         });
         return;
       }
 
-      // Update profile with additional details
-      if (authData.user) {
+      // Enforce unique phone number
+      const { data: existing } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("phone", formData.phone)
+        .limit(1);
+
+      if (existing && existing.length > 0) {
+        toast({
+          title: "Duplicate phone number",
+          description: "This phone number is already in use.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Create user without sending emails (admin API)
+      const createPayload: any = {
+        user_metadata: {
+          first_name: formData.first_name,
+          last_name: formData.last_name,
+          role: formData.role,
+        },
+        phone: formData.phone,
+        phone_confirm: true,
+      };
+
+      if (formData.email) {
+        createPayload.email = formData.email;
+        createPayload.email_confirm = true;
+      }
+
+      const { data: adminData, error: adminError } = await supabase.auth.admin.createUser(createPayload);
+
+      if (adminError) {
+        toast({
+          title: "Error",
+          description: adminError.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (adminData?.user) {
         const { error: profileError } = await supabase
           .from("profiles")
           .update({
@@ -154,7 +183,7 @@ export default function Staff() {
             date_of_birth: formData.date_of_birth || null,
             gender: formData.gender || null,
           })
-          .eq("id", authData.user.id);
+          .eq("id", adminData.user.id);
 
         if (profileError) {
           console.error("Profile update error:", profileError);
@@ -183,12 +212,31 @@ export default function Staff() {
     if (!selectedStaff) return;
 
     try {
+      // Enforce unique phone for other users
+      if (formData.phone?.trim()) {
+        const { data: dup } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("phone", formData.phone)
+          .neq("id", selectedStaff.id)
+          .limit(1);
+
+        if (dup && dup.length > 0) {
+          toast({
+            title: "Duplicate phone number",
+            description: "This phone number is already in use by another user.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
       const { error } = await supabase
         .from("profiles")
         .update({
           first_name: formData.first_name,
           last_name: formData.last_name,
-          email: formData.email,
+          email: formData.email || null,
           phone: formData.phone,
           role: formData.role,
           address: formData.address,
@@ -278,7 +326,7 @@ export default function Staff() {
     const matchesSearch = 
       member.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       member.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.email.toLowerCase().includes(searchTerm.toLowerCase());
+      (member.email || "").toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesRole = roleFilter === "all" || member.role === roleFilter;
 
@@ -371,6 +419,8 @@ export default function Staff() {
                   <Label htmlFor="phone">Phone</Label>
                   <Input 
                     id="phone" 
+                    type="tel"
+                    required
                     value={formData.phone}
                     onChange={(e) => setFormData({...formData, phone: e.target.value})}
                     placeholder="+1 (555) 123-4567" 
@@ -701,6 +751,8 @@ export default function Staff() {
                 <Label htmlFor="editPhone">Phone</Label>
                 <Input 
                   id="editPhone" 
+                  type="tel"
+                  required
                   value={formData.phone}
                   onChange={(e) => setFormData({...formData, phone: e.target.value})}
                 />
