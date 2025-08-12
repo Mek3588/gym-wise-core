@@ -173,6 +173,7 @@ export default function Members() {
         const { error: profileError } = await supabase
           .from("profiles")
           .update({
+            role: "member",
             phone: formData.phone,
             address: formData.address,
             date_of_birth: formData.date_of_birth || null,

@@ -148,6 +148,7 @@ export default function Staff() {
         const { error: profileError } = await supabase
           .from("profiles")
           .update({
+            role: formData.role,
             phone: formData.phone,
             address: formData.address,
             date_of_birth: formData.date_of_birth || null,
