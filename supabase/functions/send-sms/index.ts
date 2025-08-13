@@ -25,25 +25,30 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const AFRO_API_KEY = Deno.env.get('AFROMESSAGE_API_KEY');
-    const AFRO_IDENTIFIER_ID = Deno.env.get('AFROMESSAGE_IDENTIFIER_ID');
-    const AFRO_SENDER_NAME = Deno.env.get('AFROMESSAGE_SENDER_NAME');
-    const AFRO_BASE_URL = Deno.env.get('AFROMESSAGE_BASE_URL') || 'https://api.afromessage.com/v1/sms/send';
+    // Twilio credentials (set in Supabase Secrets)
+    const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID');
+    const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN');
+    const TWILIO_FROM_NUMBER = Deno.env.get('TWILIO_FROM_NUMBER'); // optional if using Messaging Service
+    const TWILIO_MESSAGING_SERVICE_SID = Deno.env.get('TWILIO_MESSAGING_SERVICE_SID'); // optional alternative to FROM
 
-    if (!AFRO_API_KEY || !AFRO_IDENTIFIER_ID || !AFRO_SENDER_NAME) {
-      console.error('Missing AfroMessage credentials');
+    if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || (!TWILIO_FROM_NUMBER && !TWILIO_MESSAGING_SERVICE_SID)) {
+      console.error('Missing Twilio credentials');
       return new Response(
-        JSON.stringify({ error: 'AfroMessage credentials not configured' }),
-        { 
-          status: 500, 
-          headers: { 'Content-Type': 'application/json', ...corsHeaders } 
-        }
+        JSON.stringify({ error: 'Twilio credentials not configured. Provide ACCOUNT_SID, AUTH_TOKEN and either FROM number or MESSAGING_SERVICE_SID.' }),
+        { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
       );
     }
 
     const { campaignId, recipients, message, type }: SMSRequest = await req.json();
 
-    console.log(`Processing SMS request for ${recipients.length} recipients`);
+    if (!recipients?.length || !message) {
+      return new Response(
+        JSON.stringify({ error: 'Recipients and message are required.' }),
+        { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
+    }
+
+    console.log(`Processing SMS request (Twilio) for ${recipients.length} recipients`);
 
     // Initialize Supabase client
     const supabase = createClient(
@@ -51,17 +56,13 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    // Create authorization header for Twilio
-    const afroHeaders = {
-      'Authorization': `Bearer ${AFRO_API_KEY}`,
-      'Content-Type': 'application/json',
-    };
+    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`;
+    const authHeader = 'Basic ' + btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`);
 
     let successCount = 0;
     let failedCount = 0;
-    const smsLogs = [];
+    const smsLogs: any[] = [];
 
-    // Send SMS to each recipient
     for (const recipient of recipients) {
       try {
         // Personalize message
@@ -70,21 +71,27 @@ const handler = async (req: Request): Promise<Response> => {
           .replace(/\{lastName\}/g, recipient.lastName)
           .replace(/\{fullName\}/g, `${recipient.firstName} ${recipient.lastName}`);
 
-        // Send SMS via AfroMessage
-        const afroResponse = await fetch(AFRO_BASE_URL, {
+        const params = new URLSearchParams();
+        params.set('To', recipient.phone);
+        params.set('Body', personalizedMessage);
+        if (TWILIO_MESSAGING_SERVICE_SID) {
+          params.set('MessagingServiceSid', TWILIO_MESSAGING_SERVICE_SID);
+        } else if (TWILIO_FROM_NUMBER) {
+          params.set('From', TWILIO_FROM_NUMBER);
+        }
+
+        const twilioResp = await fetch(twilioUrl, {
           method: 'POST',
-          headers: afroHeaders,
-          body: JSON.stringify({
-            identifier: AFRO_IDENTIFIER_ID,
-            sender: AFRO_SENDER_NAME,
-            to: recipient.phone,
-            message: personalizedMessage,
-          }),
+          headers: {
+            'Authorization': authHeader,
+            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+          },
+          body: params.toString(),
         });
 
-        const afroData = await afroResponse.json();
+        const twilioData = await twilioResp.json();
 
-        if (afroResponse.ok && (afroData?.success === true || afroData?.status === 'success' || afroData?.code === 200)) {
+        if (twilioResp.ok && twilioData?.sid) {
           successCount++;
           smsLogs.push({
             campaign_id: campaignId,
@@ -92,8 +99,9 @@ const handler = async (req: Request): Promise<Response> => {
             phone_number: recipient.phone,
             message: personalizedMessage,
             status: 'sent',
-            twilio_sid: afroData?.id || afroData?.messageId || afroData?.data?.id || null,
+            twilio_sid: twilioData.sid,
             sent_at: new Date().toISOString(),
+            type,
           });
         } else {
           failedCount++;
@@ -103,29 +111,28 @@ const handler = async (req: Request): Promise<Response> => {
             phone_number: recipient.phone,
             message: personalizedMessage,
             status: 'failed',
-            error_message: afroData?.message || afroData?.error || JSON.stringify(afroData),
+            error_message: twilioData?.message || JSON.stringify(twilioData),
+            type,
           });
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error(`Failed to send SMS to ${recipient.phone}:`, error);
         failedCount++;
         smsLogs.push({
           campaign_id: campaignId,
           recipient_id: recipient.id,
           phone_number: recipient.phone,
-          message: message,
+          message,
           status: 'failed',
           error_message: error.message,
+          type,
         });
       }
     }
 
     // Save SMS logs to database
     if (smsLogs.length > 0) {
-      const { error: logsError } = await supabase
-        .from('sms_logs')
-        .insert(smsLogs);
-
+      const { error: logsError } = await supabase.from('sms_logs').insert(smsLogs as any[]);
       if (logsError) {
         console.error('Error saving SMS logs:', logsError);
       }
@@ -149,7 +156,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    console.log(`SMS sending completed: ${successCount} successful, ${failedCount} failed`);
+    console.log(`SMS sending completed (Twilio): ${successCount} successful, ${failedCount} failed`);
 
     return new Response(
       JSON.stringify({
@@ -161,19 +168,13 @@ const handler = async (req: Request): Promise<Response> => {
           failed: failedCount,
         },
       }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      }
+      { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
     );
   } catch (error: any) {
-    console.error('Error in send-sms function:', error);
+    console.error('Error in send-sms (Twilio) function:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      }
+      { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
     );
   }
 };

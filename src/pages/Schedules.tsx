@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Calendar, Clock, Users, MapPin, Plus, Edit, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -86,6 +88,8 @@ export default function Schedules() {
     trainer_id: ''
   });
 
+const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
+
   const [workoutForm, setWorkoutForm] = useState({
     user_id: '',
     workout_id: '',
@@ -159,6 +163,15 @@ export default function Schedules() {
 
       if (error) throw error;
 
+      // Sync attendees bookings (ignore errors but log)
+      try {
+        if (data?.id) {
+          await syncClassBookings(data.id, selectedMemberIds);
+        }
+      } catch (e) {
+        console.error('Failed to sync attendees for new class:', e);
+      }
+
       toast({
         title: "Success",
         description: "Class created successfully",
@@ -188,6 +201,13 @@ export default function Schedules() {
 
       if (error) throw error;
 
+      // Sync attendees bookings (ignore errors but log)
+      try {
+        await syncClassBookings(editingClass.id, selectedMemberIds);
+      } catch (e) {
+        console.error('Failed to sync attendees for class update:', e);
+      }
+
       toast({
         title: "Success",
         description: "Class updated successfully",
@@ -204,6 +224,51 @@ export default function Schedules() {
         description: "Failed to update class",
         variant: "destructive",
       });
+    }
+  };
+
+  // Load existing bookings for a class and return member IDs
+  const fetchClassBookings = async (classId: string): Promise<string[]> => {
+    const { data, error } = await supabase
+      .from('class_bookings')
+      .select('user_id')
+      .eq('class_id', classId);
+    if (error) {
+      console.error('Error fetching class bookings:', error);
+      return [];
+    }
+    return (data || []).map((b: any) => b.user_id);
+  };
+
+  // Sync class_bookings to match selected members
+  const syncClassBookings = async (classId: string, memberIds: string[]) => {
+    // Fetch existing bookings
+    const { data: existing, error: existingError } = await supabase
+      .from('class_bookings')
+      .select('id, user_id')
+      .eq('class_id', classId);
+
+    if (existingError) throw existingError;
+
+    const existingIds = new Set((existing || []).map((b: any) => b.user_id));
+    const desiredIds = new Set(memberIds);
+
+    const toAdd = [...desiredIds].filter((id) => !existingIds.has(id));
+    const toRemove = (existing || []).filter((b: any) => !desiredIds.has(b.user_id));
+
+    if (toAdd.length > 0) {
+      const { error: addError } = await supabase.from('class_bookings').insert(
+        toAdd.map((userId) => ({ class_id: classId, user_id: userId, status: 'confirmed' }))
+      );
+      if (addError) throw addError;
+    }
+
+    if (toRemove.length > 0) {
+      const { error: delError } = await supabase
+        .from('class_bookings')
+        .delete()
+        .in('id', toRemove.map((b: any) => b.id));
+      if (delError) throw delError;
     }
   };
 
@@ -274,6 +339,7 @@ export default function Schedules() {
       room_location: '',
       trainer_id: ''
     });
+    setSelectedMemberIds([]);
   };
 
   const resetWorkoutForm = () => {
@@ -287,7 +353,7 @@ export default function Schedules() {
     });
   };
 
-  const editClass = (classItem: Class) => {
+  const editClass = async (classItem: Class) => {
     setEditingClass(classItem);
     setClassForm({
       name: classItem.name,
@@ -299,6 +365,9 @@ export default function Schedules() {
       room_location: classItem.room_location || '',
       trainer_id: classItem.trainer_id
     });
+    // Load existing attendees
+    const bookedMembers = await fetchClassBookings(classItem.id);
+    setSelectedMemberIds(bookedMembers);
     setShowClassDialog(true);
   };
 
@@ -317,10 +386,10 @@ export default function Schedules() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'scheduled': return 'bg-blue-500/20 text-blue-700 border-blue-500/30';
+      case 'scheduled': return 'bg-primary/20 text-primary-foreground/80 border-primary/30';
       case 'completed': return 'bg-green-500/20 text-green-700 border-green-500/30';
-      case 'cancelled': return 'bg-red-500/20 text-red-700 border-red-500/30';
-      default: return 'bg-gray-500/20 text-gray-700 border-gray-500/30';
+      case 'cancelled': return 'bg-destructive/20 text-destructive-foreground/80 border-destructive/30';
+      default: return 'bg-muted/40 text-muted-foreground border-muted/40';
     }
   };
 
@@ -370,7 +439,7 @@ export default function Schedules() {
             <h2 className="text-xl font-semibold">Group Classes</h2>
             <Dialog open={showClassDialog} onOpenChange={setShowClassDialog}>
               <DialogTrigger asChild>
-                <Button className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70">
+                <Button className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70" onClick={() => { setEditingClass(null); resetClassForm(); setSelectedMemberIds([]); }}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Class
                 </Button>
@@ -464,6 +533,33 @@ export default function Schedules() {
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+                  <div>
+                    <Label>Attendees</Label>
+                    <ScrollArea className="h-40 rounded-md border p-2">
+                      <div className="space-y-2">
+                        {members.map((member) => {
+                          const checked = selectedMemberIds.includes(member.id);
+                          return (
+                            <label key={member.id} className="flex items-center gap-2 text-sm">
+                              <Checkbox
+                                checked={checked}
+                                onCheckedChange={(value) => {
+                                  const isChecked = Boolean(value);
+                                  setSelectedMemberIds((prev) =>
+                                    isChecked ? [...prev, member.id] : prev.filter((id) => id !== member.id)
+                                  );
+                                }}
+                              />
+                              <span>{member.first_name} {member.last_name}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </ScrollArea>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {selectedMemberIds.length}/{classForm.max_capacity} selected
+                    </p>
                   </div>
                 </div>
                 <DialogFooter>
