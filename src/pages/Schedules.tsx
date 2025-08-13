@@ -258,7 +258,7 @@ const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
 
     if (toAdd.length > 0) {
       const { error: addError } = await supabase.from('class_bookings').insert(
-        toAdd.map((userId) => ({ class_id: classId, user_id: userId, status: 'confirmed' }))
+        toAdd.map((userId) => ({ class_id: classId, user_id: userId, status: 'confirmed' as const }))
       );
       if (addError) throw addError;
     }
