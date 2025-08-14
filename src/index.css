@@ -19,6 +19,7 @@ All colors MUST be HSL.
 
     --primary: 200 98% 39%;
     --primary-foreground: 0 0% 98%;
+    --primary-glow: 200 98% 50%;
 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -37,6 +38,22 @@ All colors MUST be HSL.
     --ring: 222.2 84% 4.9%;
 
     --radius: 0.5rem;
+
+    /* Modern gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-card: linear-gradient(180deg, hsl(var(--card)), hsl(var(--muted)));
+    --gradient-success: linear-gradient(135deg, #10b981, #22d3ee);
+    --gradient-warning: linear-gradient(135deg, #f59e0b, #fbbf24);
+    --gradient-danger: linear-gradient(135deg, #ef4444, #f87171);
+
+    /* Shadows */
+    --shadow-elegant: 0 4px 20px -2px hsl(var(--primary) / 0.1);
+    --shadow-glow: 0 0 30px hsl(var(--primary-glow) / 0.3);
+    --shadow-card: 0 2px 10px -2px hsl(0 0% 0% / 0.1);
+
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: all 0.15s ease-out;
 
     --sidebar-background: 0 0% 98%;
 
@@ -67,6 +84,7 @@ All colors MUST be HSL.
 
     --primary: 200 98% 39%;
     --primary-foreground: 0 0% 98%;
+    --primary-glow: 200 98% 50%;
 
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -83,6 +101,18 @@ All colors MUST be HSL.
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
+
+    /* Dark mode gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-card: linear-gradient(180deg, hsl(var(--card)), hsl(var(--muted)));
+    --gradient-success: linear-gradient(135deg, #059669, #0891b2);
+    --gradient-warning: linear-gradient(135deg, #d97706, #eab308);
+    --gradient-danger: linear-gradient(135deg, #dc2626, #ef4444);
+
+    /* Dark mode shadows */
+    --shadow-elegant: 0 4px 20px -2px hsl(0 0% 0% / 0.3);
+    --shadow-glow: 0 0 30px hsl(var(--primary-glow) / 0.2);
+    --shadow-card: 0 2px 10px -2px hsl(0 0% 0% / 0.5);
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
