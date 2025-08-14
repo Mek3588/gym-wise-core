@@ -491,13 +491,14 @@ export default function SMS() {
                           </div>
                         ) : (
                           members.filter(member => getPhone(member)).map((member) => (
-                            <div
+                            <CommandItem
                               key={member.id}
-                              className="flex items-center space-x-2 cursor-pointer p-2 hover:bg-accent rounded-sm"
-                              onClick={() => {
+                              value={member.id}
+                              onSelect={() => {
                                 const isChecked = !selectedMembers.includes(member.id);
                                 handleMemberSelection(member.id, isChecked);
                               }}
+                              className="flex items-center space-x-2 cursor-pointer"
                             >
                               <Checkbox
                                 checked={selectedMembers.includes(member.id)}
@@ -509,7 +510,7 @@ export default function SMS() {
                                   {member.role}
                                 </Badge>
                               </span>
-                            </div>
+                            </CommandItem>
                           ))
                         )}
                       </CommandGroup>
