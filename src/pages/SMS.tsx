@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { MessageSquare, Send, Users, Calendar, Activity, Plus, Filter } from "lucide-react";
@@ -477,31 +478,43 @@ export default function SMS() {
                     </div>
                   </div>
                   
-                  <div className="max-h-40 overflow-y-auto border rounded-md p-4 space-y-2">
-                    {members.filter(member => getPhone(member)).length === 0 ? (
-                      <p className="text-sm text-muted-foreground">
-                        No members with phone numbers found. Add phone numbers in the Members page and refresh.
-                      </p>
-                    ) : (
-                      members.filter(member => getPhone(member)).map((member) => (
-                        <div key={member.id} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={member.id}
-                            checked={selectedMembers.includes(member.id)}
-                            onCheckedChange={(checked) => 
-                              handleMemberSelection(member.id, checked as boolean)
-                            }
-                          />
-                          <label htmlFor={member.id} className="text-sm cursor-pointer">
-                            {member.first_name} {member.last_name} - {getPhone(member)}
-                            <Badge variant="outline" className="ml-2">
-                              {member.role}
-                            </Badge>
-                          </label>
-                        </div>
-                      ))
-                    )}
-                  </div>
+                  <Command className="border rounded-md">
+                    <CommandInput placeholder="Search members..." />
+                    <CommandList className="max-h-40">
+                      <CommandEmpty>No member found.</CommandEmpty>
+                      <CommandGroup>
+                        {members.filter(member => getPhone(member)).length === 0 ? (
+                          <div className="p-4">
+                            <p className="text-sm text-muted-foreground">
+                              No members with phone numbers found. Add phone numbers in the Members page and refresh.
+                            </p>
+                          </div>
+                        ) : (
+                          members.filter(member => getPhone(member)).map((member) => (
+                            <CommandItem
+                              key={member.id}
+                              value={`${member.first_name} ${member.last_name} ${getPhone(member)}`}
+                              onSelect={() => {
+                                const isChecked = !selectedMembers.includes(member.id);
+                                handleMemberSelection(member.id, isChecked);
+                              }}
+                            >
+                              <Checkbox
+                                checked={selectedMembers.includes(member.id)}
+                                className="mr-2"
+                              />
+                              <span className="flex-1">
+                                {member.first_name} {member.last_name} - {getPhone(member)}
+                                <Badge variant="outline" className="ml-2">
+                                  {member.role}
+                                </Badge>
+                              </span>
+                            </CommandItem>
+                          ))
+                        )}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
                 </div>
 
                 <div className="flex justify-end gap-2">

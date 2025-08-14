@@ -8,8 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Label } from "@/components/ui/label";
-import { Search, Plus, Calendar as CalendarIcon, CheckCircle, Clock, QrCode, UserCheck, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Plus, Calendar as CalendarIcon, CheckCircle, Clock, QrCode, UserCheck, ChevronLeft, ChevronRight, ChevronDown, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -48,6 +49,7 @@ export default function Attendance() {
   const [isLoading, setIsLoading] = useState(true);
   const [isCheckInDialogOpen, setIsCheckInDialogOpen] = useState(false);
   const [selectedMemberId, setSelectedMemberId] = useState("");
+  const [memberSearchOpen, setMemberSearchOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"daily" | "history">("daily");
   const { toast } = useToast();
 
@@ -286,18 +288,45 @@ export default function Attendance() {
               <div className="grid gap-4 py-4">
                 <div className="space-y-2">
                   <Label htmlFor="member">Select Member</Label>
-                  <Select value={selectedMemberId} onValueChange={setSelectedMemberId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose a member" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {members.map((member) => (
-                        <SelectItem key={member.id} value={member.id}>
-                          {member.first_name} {member.last_name} - {member.email}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover open={memberSearchOpen} onOpenChange={setMemberSearchOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" role="combobox" aria-expanded={memberSearchOpen} className="w-full justify-between">
+                        {selectedMemberId 
+                          ? members.find((member) => member.id === selectedMemberId)?.first_name + " " + members.find((member) => member.id === selectedMemberId)?.last_name
+                          : "Choose a member..."
+                        }
+                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0">
+                      <Command>
+                        <CommandInput placeholder="Search members..." />
+                        <CommandList>
+                          <CommandEmpty>No member found.</CommandEmpty>
+                          <CommandGroup>
+                            {members.map((member) => (
+                              <CommandItem
+                                key={member.id}
+                                value={`${member.first_name} ${member.last_name} ${member.email}`}
+                                onSelect={() => {
+                                  setSelectedMemberId(member.id);
+                                  setMemberSearchOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    selectedMemberId === member.id ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {member.first_name} {member.last_name} - {member.email}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <Button onClick={handleCheckIn} className="w-full">
                   Check In
