@@ -9,11 +9,15 @@ export default function Auth() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user is already authenticated (dummy session)
-    const dummySession = localStorage.getItem('dummy-session');
-    if (dummySession) {
-      navigate("/dashboard");
-    }
+    // Check if user is already authenticated
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate("/dashboard");
+      }
+    };
+    
+    checkAuth();
   }, [navigate]);
 
   const toggleMode = () => {

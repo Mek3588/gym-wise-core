@@ -19,17 +19,11 @@ export function AuthForm({ mode, onToggleMode }: AuthFormProps) {
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
   const [role, setRole] = useState<"member" | "trainer" | "admin">("member");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  // Dummy users for testing
-  const dummyUsers = [
-    { email: "admin@gym.com", password: "admin123", role: "admin", name: "Admin User" },
-    { email: "trainer@gym.com", password: "trainer123", role: "trainer", name: "Trainer User" },
-    { email: "member@gym.com", password: "member123", role: "member", name: "Member User" },
-  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,43 +32,74 @@ export function AuthForm({ mode, onToggleMode }: AuthFormProps) {
     setIsLoading(true);
 
     try {
-      // Check dummy credentials
-      const user = dummyUsers.find(u => u.email === email && u.password === password);
-      
-      if (user) {
-        // Store dummy session in localStorage
-        const dummySession = {
-          user: { 
-            id: user.email, 
-            email: user.email, 
-            user_metadata: { 
-              first_name: user.name.split(' ')[0],
-              last_name: user.name.split(' ')[1],
-              role: user.role 
-            }
-          },
-          access_token: 'dummy-token'
-        };
-        localStorage.setItem('dummy-session', JSON.stringify(dummySession));
-        
+      if (mode === "login") {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) throw error;
+
         toast({
           title: "Welcome back!",
-          description: `Logged in as ${user.role}`,
+          description: "Successfully signed in",
         });
-        
-        // Redirect to dashboard using navigate
+
         navigate('/dashboard');
       } else {
-        toast({
-          title: "Login failed",
-          description: "Invalid email or password. Try admin@gym.com/admin123",
-          variant: "destructive",
+        // Sign up mode
+        if (!firstName || !lastName) {
+          toast({
+            title: "Missing Information",
+            description: "Please fill in all required fields",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              first_name: firstName,
+              last_name: lastName,
+              role: role,
+            },
+            emailRedirectTo: undefined, // Disable email confirmation
+          },
         });
+
+        if (error) throw error;
+
+        if (data.user) {
+          // Update the profile with additional information
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .update({
+              phone: phone || null,
+              role: role,
+            })
+            .eq('id', data.user.id);
+
+          if (profileError) {
+            console.error('Profile update error:', profileError);
+          }
+
+          toast({
+            title: "Account Created!",
+            description: "Your account has been created successfully",
+          });
+
+          // Automatically sign in after signup
+          navigate('/dashboard');
+        }
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Auth error:', error);
       toast({
-        title: "An error occurred",
-        description: "Please try again later.",
+        title: mode === "login" ? "Login failed" : "Signup failed",
+        description: error.message || "An error occurred. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -90,7 +115,7 @@ export function AuthForm({ mode, onToggleMode }: AuthFormProps) {
         </CardTitle>
         <CardDescription>
           {mode === "login"
-            ? "Use: admin@gym.com/admin123, trainer@gym.com/trainer123, or member@gym.com/member123"
+            ? "Sign in to your gym management account"
             : "Join our gym management system"}
         </CardDescription>
       </CardHeader>
@@ -119,6 +144,16 @@ export function AuthForm({ mode, onToggleMode }: AuthFormProps) {
                     required
                   />
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number (Optional)</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+1 (555) 123-4567"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="role">Role</Label>
@@ -155,6 +190,11 @@ export function AuthForm({ mode, onToggleMode }: AuthFormProps) {
               required
               minLength={6}
             />
+            {mode === "signup" && (
+              <p className="text-xs text-muted-foreground">
+                Password must be at least 6 characters long
+              </p>
+            )}
           </div>
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
