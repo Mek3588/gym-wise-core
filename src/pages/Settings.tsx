@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Shield, Users, Settings as SettingsIcon, User } from "lucide-react";
-import { RoleManagement } from "@/components/settings/RoleManagement";
+import { RoleManagementModule } from "@/modules/rbac";
 import { ProfileSettings } from "@/components/settings/ProfileSettings";
 import { SystemSettings } from "@/components/settings/SystemSettings";
 
@@ -109,7 +109,7 @@ const Settings = () => {
 
         {(isAdmin || isTrainer) && (
           <TabsContent value="roles">
-            <RoleManagement currentUserRole={currentUser?.role || 'member'} />
+            <RoleManagementModule />
           </TabsContent>
         )}
 
