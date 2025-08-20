@@ -18,6 +18,7 @@ import Reports from "./pages/Reports";
 import Schedules from "./pages/Schedules";
 import SMS from "./pages/SMS";
 import Settings from "./pages/Settings";
+import PaymentCallback from "./pages/PaymentCallback";
 import { AppLayout } from "./components/layout/AppLayout";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,8 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/payments/callback" element={<PaymentCallback />} />
+          <Route path="/payments/success" element={<PaymentCallback />} />
           <Route element={<AppLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/members" element={<Members />} />

@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Plus, Pencil, Trash2, Eye, Upload, Download, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, Upload, Download, Search, CreditCard, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -12,6 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { ChapaPaymentDialog } from "@/components/payments/ChapaPaymentDialog";
+import { chapaService } from "@/services/chapaService";
 
 interface Payment {
   id: string;
@@ -45,6 +47,7 @@ export default function Payments() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isChapaDialogOpen, setIsChapaDialogOpen] = useState(false);
   const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -292,21 +295,30 @@ export default function Payments() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Payment Management</h1>
-          <p className="text-muted-foreground">Manage payments, receipts, and transactions</p>
+          <p className="text-muted-foreground">Manage payments with Chapa integration and manual entries</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button 
-              onClick={() => {
-                setEditingPayment(null);
-                resetForm();
-              }}
-              className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Payment
-            </Button>
-          </DialogTrigger>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button 
+            onClick={() => setIsChapaDialogOpen(true)}
+            className="w-full sm:w-auto bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
+          >
+            <CreditCard className="h-4 w-4 mr-2" />
+            Pay with Chapa
+          </Button>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button 
+                onClick={() => {
+                  setEditingPayment(null);
+                  resetForm();
+                }}
+                variant="outline"
+                className="w-full sm:w-auto"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Manual Entry
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-xl font-semibold">
@@ -428,13 +440,14 @@ export default function Payments() {
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="w-full sm:w-auto">
                   Cancel
                 </Button>
-                <Button type="submit" className="w-full sm:w-auto bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700">
+                <Button type="submit" className="w-full sm:w-auto">
                   {editingPayment ? 'Update' : 'Create'} Payment
                 </Button>
               </div>
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Filters */}
@@ -468,7 +481,13 @@ export default function Payments() {
       {/* Payments Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Payments Overview</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            Payments Overview
+            <Badge variant="outline" className="text-xs">
+              <Shield className="w-3 h-3 mr-1" />
+              Chapa Integrated
+            </Badge>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -510,6 +529,11 @@ export default function Payments() {
                     <TableCell>
                       <span className="font-mono text-sm">
                         {payment.transaction_id || '-'}
+                        {payment.payment_method === 'chapa' && (
+                          <Badge variant="secondary" className="ml-2 text-xs">
+                            Chapa
+                          </Badge>
+                        )}
                       </span>
                     </TableCell>
                     <TableCell>
@@ -548,6 +572,20 @@ export default function Payments() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Chapa Payment Dialog */}
+      <ChapaPaymentDialog
+        isOpen={isChapaDialogOpen}
+        onClose={() => setIsChapaDialogOpen(false)}
+        employees={employees}
+        onPaymentSuccess={() => {
+          fetchPayments();
+          toast({
+            title: "Payment Initiated",
+            description: "Payment has been sent to Chapa for processing",
+          });
+        }}
+      />
     </div>
   );
 }
